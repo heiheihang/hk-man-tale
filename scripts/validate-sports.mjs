@@ -66,7 +66,7 @@ for (const [team, practice, sport] of [
 }
 clearBoard(); S.sports = { football: true };
 assert(!fits(makeCard('basketballteam'), 'grid:weekday:0'), 'Wrong sport does not qualify');
-S.grids.weekend = Array.from({length: 4}, () => makeCard('team'));
+S.grids.weekday = Array.from({length: 4}, () => makeCard('team'));
 S.grids.bag[0] = makeCard('paddle');
 startWeek();
 assert(!S.sports.tabletennis, 'Over-time schedule cannot teach a skill');

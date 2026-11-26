@@ -41,13 +41,13 @@ header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; pad
 .res small { color: #aab; }
 .res.bad { background: var(--red); }
 
-#timeline { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 8px 20px; }
+#timeline { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; padding: 8px 20px; }
 .stg { background: var(--paper2); border: 1.5px dashed var(--line); border-radius: 8px; padding: 4px 6px; min-width: 0; }
 .stg.past { opacity: .5; }
 .stg.now { border: 2px solid var(--red); background: #fff6f4; }
 .stn { font-family: var(--hand); font-weight: 700; font-size: 14px; }
 .stn small { margin-left: 4px; font-size: 10px; font-family: var(--sans); }
-.tbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; margin-top: 2px; }
+.tbs { display: grid; grid-template-columns: repeat(var(--turn-count, 3), 1fr); gap: 3px; margin-top: 2px; }
 .tb { font-size: 10px; background: #f1ede1; border-radius: 4px; padding: 2px 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
 .tb.cur { background: var(--red); color: white; font-weight: 700; }
 #week small { font-size: 12px; color: #cfc6a8; }
@@ -176,6 +176,7 @@ main { display: grid; grid-template-columns: 250px minmax(420px, 1fr) 340px; gap
 
 @media (max-width: 1100px) {
   main { grid-template-columns: 1fr; }
+  #timeline { grid-template-columns: repeat(8, minmax(128px, 1fr)); overflow-x: auto; }
   #bench { grid-template-columns: repeat(4, 1fr); }
 }
 

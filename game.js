@@ -1,5 +1,5 @@
 // ============================================================
-// 港男物語 — game logic + rendering (7 stages × 3 turns, 2–3 events per event phase)
+// 港男物語 — game logic + rendering (stage-specific turn counts, 2–3 events per phase)
 // ============================================================
 
 const $ = sel => document.querySelector(sel);
@@ -11,7 +11,6 @@ const wpick = arr => { const tot = arr.reduce((t, x) => t + x.w, 0); let r = Mat
 const sign = v => (v > 0 ? '+' + v : '' + v);
 
 const BENCH_MAX = 8;
-const TURNS_PER_STAGE = 3;
 const RING_COST = 1000;
 const ITEM_BONUS = 5, ITEM_BONUS_MAX = 15, USE_BONUS = 20, VENUE_BONUS = 4;
 
@@ -19,15 +18,24 @@ let S = null;          // game state
 let uid = 1;
 let selected = null;   // selected location string
 
-const stageDef = () => STAGES[S.stage];
+const stageDef = () => S.stage === STAGE_INDEX.university && S.flags.edu === 'asso'
+  ? { ...STAGES[S.stage], name: '大專', intro: STAGES[S.stage].intro.replace('大學', '大專') }
+  : STAGES[S.stage];
+const turnsInStage = () => stageDef().turns.length;
+const nextStageIndex = () => S.stage === STAGE_INDEX.secondary && S.flags.edu === 'work'
+  ? STAGE_INDEX.grad : S.stage + 1;
+function zoneAllows(card, grid) {
+  const requiredTag = stageDef().zoneTags?.[grid];
+  return def(card).slot.includes(grid) && (!requiredTag || def(card).tags.includes(requiredTag));
+}
 // ---- 法寶 ----
 const hasRelic = id => S.relics.includes(id);
 const benchMax = () => BENCH_MAX + (hasRelic('bigbag') ? 2 : 0);
 const timeMax = () => stageDef().time + (hasRelic('planner') ? 1 : 0);
 const masteryEvery = () => (hasRelic('learner') ? 1 : MASTERY_EVERY);
 const payday = v => Math.round(v * (hasRelic('payday') ? 1.15 : 1));
-// before university you spend your parents' 零用錢; afterwards your own 💰
-const isKid = () => S.stage <= 2;
+// Living allowance through tertiary education; salary starts with the first job.
+const isKid = () => S.stage < STAGE_INDEX.grad;
 const moneyIcon = () => (isKid() ? '🧧' : '💰');
 const fmtPrice = v => `${isKid() ? '🧧' : '$'}${v}`;
 const fmtMoneyFx = v => `${isKid() ? '零用錢' : '$'}${sign(v)}`;
@@ -120,6 +128,16 @@ function startStage(i, first = false) {
     S.money += refund;
     log(`你大個咗：${gone.map(c => def(c).emoji + def(c).name).join('、')} 收埋咗（退 ${fmtPrice(refund)}）`);
   }
+  // Reconfigure changed zones without letting old school items count as outfits or dating apps.
+  for (const p of placed()) {
+    if (zoneAllows(p.card, p.grid)) continue;
+    S.grids[p.grid][p.idx] = null;
+    const spot = def(p.card).slot.filter(grid => zoneAllows(p.card, grid))
+      .map(grid => [grid, S.grids[grid].indexOf(null)]).find(([, index]) => index >= 0);
+    if (spot) S.grids[spot[0]][spot[1]] = p.card;
+    else if (S.bench.length < benchMax()) S.bench.push(p.card);
+    else { S.money += sellPrice(p.card); log(`${def(p.card).name} 唔適合新分類，後備區已滿，已退回 ${fmtPrice(sellPrice(p.card))}`); }
+  }
   // starter cards: auto-place if a cell is free and the schedule has room, else bench
   const owned = new Set([...placed().map(p => p.card.id), ...S.bench.map(c => c.id)]);
   for (const id of st.starter) {
@@ -127,12 +145,15 @@ function startStage(i, first = false) {
     const card = makeCard(id);
     const load = scheduleLoad();
     const room = load.time + (CARDS[id].time || 0) <= timeMax() && load.energy + (CARDS[id].energy || 0) <= st.energy;
-    const spot = room && CARDS[id].slot.map(g => [g, S.grids[g].indexOf(null)]).find(([, k]) => k >= 0);
+    const spot = room && CARDS[id].slot.filter(g => zoneAllows(card, g)).map(g => [g, S.grids[g].indexOf(null)]).find(([, k]) => k >= 0);
     if (spot) S.grids[spot[0]][spot[1]] = card; else if (S.bench.length < benchMax()) S.bench.push(card);
   }
   // income
-  if (i <= 2) S.income = S.bg.finance.allowance[i] + S.perm.allowance;
-  else if (i === 3) {
+  if (i <= STAGE_INDEX.secondary) S.income = S.bg.finance.allowance[i] + S.perm.allowance;
+  else if (i === STAGE_INDEX.university) {
+    S.flags.edu ||= 'uni';
+    S.income = S.bg.finance.allowance[2] + S.perm.allowance;
+  } else if (i === STAGE_INDEX.grad) {
     S.flags.edu = S.flags.edu || 'asso';
     S.income = SALARY[S.flags.edu] + S.bg.finance.support;
     log(`🧧 剩低嘅零用錢 $${S.money} 變成第一筆積蓄`);
@@ -149,7 +170,7 @@ function startStage(i, first = false) {
 }
 
 function nextTurn() {
-  if (S.turn < TURNS_PER_STAGE) {
+  if (S.turn < turnsInStage()) {
     S.turn++;
     S.money += payday(S.income);
     log(`${isKid() ? '🧧 屋企俾零用錢' : '💰 出糧'} ${fmtPrice(payday(S.income))}`);
@@ -163,13 +184,13 @@ function nextTurn() {
     // stage over: choose 1 of 3 法寶 before the next stage begins
     const pool = Object.keys(RELICS).filter(id => !S.relics.includes(id));
     if (pool.length) { S.modal = { stage: 'relic', options: shuffleArr(pool).slice(0, RELIC_CHOICES) }; return render(); }
-    startStage(S.stage + 1);
+    startStage(nextStageIndex());
   }
   render();
 }
 function takeRelic(id) {
   if (id) { S.relics.push(id); log(`獲得法寶 ${RELICS[id].emoji}${RELICS[id].name}`); }
-  startStage(S.stage + 1);
+  startStage(nextStageIndex());
   render();
 }
 
@@ -184,12 +205,12 @@ function rollShop() {
   const owned = new Set([...placed(), ...S.bench.map(card => ({ card }))].map(p => p.card.id));
   const prev = new Set((S.shop || []).filter(Boolean).map(c => c.id));
   const ids = Object.keys(CARDS).filter(id => inStage(id) && !CARDS[id].noshop && !stageDef().starter.includes(id)
-    && !owned.has(id));   // never offer a card you already own (board or bench)
+    && !owned.has(id) && CARDS[id].slot.some(grid => zoneAllows({ id }, grid)));   // only offer cards usable in this stage's zones
   const cats = [...shuffleArr(SHOP_CATS), pick(SHOP_CATS), pick(SHOP_CATS), ...(hasRelic('extraslot') ? [pick(SHOP_CATS)] : [])];
   const taken = new Set();
   S.shop = [];
   for (const cat of cats) {
-    let pool = ids.filter(id => CARDS[id].slot.includes(cat) && !taken.has(id));
+    let pool = ids.filter(id => zoneAllows({ id }, cat) && !taken.has(id));
     if (!pool.length) pool = ids.filter(id => !taken.has(id));   // empty category → any category
     if (!pool.length) break;
     const id = wpick(pool.map(id => ({ id, w: RARITY[CARDS[id].rarity].weight * (1 + shopBoost(id)) * (prev.has(id) ? 0.3 : 1) }))).id;
@@ -261,7 +282,7 @@ const curAge = () => TURN_AGES[S.stage][S.turn - 1];
 const finalHeight = () => S.bg.height + S.growth;
 const curHeight = () => Math.round(finalHeight() * (HEIGHT_FRAC[curAge()] || 1));
 // still growing and doing sport this turn → +1cm to adult height
-const growsThisTurn = () => S.stage <= 2 && S.growth < GROWTH_MAX && placed().some(p => (p.grid === 'weekday' || p.grid === 'weekend') && def(p.card).tags.includes('sport') && !cardRequirement(p.card));
+const growsThisTurn = () => S.stage <= STAGE_INDEX.secondary && S.growth < GROWTH_MAX && placed().some(p => (p.grid === 'weekday' || p.grid === 'weekend') && zoneAllows(p.card, p.grid) && def(p.card).tags.includes('sport') && !cardRequirement(p.card));
 function masteryLv(card) { return Math.min(MASTERY_MAX, Math.floor((card.xp || 0) / masteryEvery())); }
 // who your romance cards act on: partner first, else target
 function loveIdx() { return S.partner !== null ? S.partner : S.target; }
@@ -362,7 +383,7 @@ function confessChance(g) { return clamp(Math.round(g.aff * 0.8 + match(g) * 0.3
 function providerBonus() { return (S.flags.flat ? 8 : 0) + Math.min(10, Math.floor(Math.max(0, S.money) / 1000) * 2); }
 function proposeChance(g) { return clamp(Math.round(g.aff * 0.9 + match(g) * 0.2 - 30 + chem(g) / 4 + providerBonus() + (hasRelic('charmer') ? 10 : 0) + luckBonus()), 5, 95); }
 function canConfess(i) { return stageDef().romance && S.partner === null && S.girls[i].aff >= 40 && !S.romanceUsed; }
-function canPropose(i) { return S.partner === i && !S.married && S.stage >= 3 && S.girls[i].aff >= 70 && S.money >= RING_COST && !S.romanceUsed; }
+function canPropose(i) { return S.partner === i && !S.married && S.stage >= STAGE_INDEX.grad && S.girls[i].aff >= 70 && S.money >= RING_COST && !S.romanceUsed; }
 
 function confess(i) {
   if (!canConfess(i)) return;
@@ -495,6 +516,7 @@ function computeWeek() {
   const m = g ? match(g) : 0;
   for (const p of placed()) {
     const d = def(p.card);
+    if (!zoneAllows(p.card, p.grid)) { lines.push(`${d.emoji} ${d.name}：唔適合${st.labels[p.grid]}分類。`); continue; }
     const requirement = cardRequirement(p.card);
     if (requirement) { lines.push(`${d.emoji} ${d.name}：${requirement}`); continue; }
     if (d.trainsSport) sportsLearned.add(d.trainsSport);
@@ -614,7 +636,7 @@ function startWeek() {
     if (gr.k === 'allowance') { S.perm.allowance += gr.v; S.income += gr.v; }
   }
   for (const p of placed()) {
-    if ((p.grid !== 'weekday' && p.grid !== 'weekend') || !def(p.card).fx.stats || cardRequirement(p.card)) continue;
+    if ((p.grid !== 'weekday' && p.grid !== 'weekend') || !zoneAllows(p.card, p.grid) || !def(p.card).fx.stats || cardRequirement(p.card)) continue;
     const before = masteryLv(p.card);
     p.card.xp = (p.card.xp || 0) + 1;
     if (masteryLv(p.card) > before) lines.push(`🎓 ${def(p.card).emoji}${def(p.card).name} 熟練度升到 Lv${masteryLv(p.card)}（${STATS[Object.keys(def(p.card).fx.stats)[0]].name}再 +1）`);
@@ -677,9 +699,9 @@ function pickOne(preferMeet = false) {
 function pickEvents() {
   S.queue = []; S.qi = 0;
   const n = 2 + (Math.random() < 0.4 ? 1 : 0);
-  const randoms = S.turn === TURNS_PER_STAGE ? n - 1 : n;
+  const randoms = S.turn === turnsInStage() ? n - 1 : n;
   for (let i = 0; i < randoms; i++) S.queue.push(pickOne(S.turn === 1 && i === 0));
-  if (S.turn === TURNS_PER_STAGE) S.queue.push(STAGE_EVENTS[S.stage].milestone);
+  if (S.turn === turnsInStage()) S.queue.push(STAGE_EVENTS[S.stage].milestone);
 }
 const evLabel = ev => (ev === 'finale' ? '🎂 四十歲' : `${ev.emoji} ${ev.title}`);
 
@@ -787,7 +809,7 @@ function lifeScore() {
   );
   return { parts, total: parts.reduce((a, [, v]) => a + v, 0), max: 140 };
 }
-const WED_AGE = ['', '', '', '二十出頭就定落嚟。', '趕喺三十歲前。', '三十幾歲，終於等到。', '四十歲先搵到——遲到好過冇到。'];
+const WED_AGE = ['', '', '', '', '二十出頭就定落嚟。', '趕喺三十歲前。', '三十幾歲，終於等到。', '四十歲先搵到——遲到好過冇到。'];
 function marriedTitle(p) {
   const c = chem(p);
   if (S.flags.shotgun) return ['奉子成婚 👶', `兩條線改寫咗你哋嘅人生。${c >= 10 ? '好彩，你哋真係啱。' : '希望你哋慢慢會啱。'}`];
@@ -842,7 +864,7 @@ function setAt(loc, card) {
 function fits(card, loc) {
   const [kind, g] = loc.split(':');
   if (kind === 'bench') return true;
-  if (kind === 'grid') return def(card).slot.includes(g) && !cardRequirement(card);
+  if (kind === 'grid') return zoneAllows(card, g) && !cardRequirement(card);
   return false;
 }
 function buy(i) {
@@ -883,7 +905,7 @@ function move(from, to) {
     if (S.bench.length >= benchMax()) return flash('後備區滿咗！');
     setAt(from, null); S.bench.push(card); return;
   }
-  if (!fits(card, to)) return flash(`${def(card).name} 只可以放喺：${def(card).slot.map(g => stageDef().labels[g]).join(' / ')}`);
+  if (!fits(card, to)) return flash(`${def(card).name} 可用位置：${def(card).slot.filter(g => zoneAllows(card, g)).map(g => stageDef().labels[g]).join(' / ') || '本階段只可放後備區'}`);
   const other = getAt(to);
   if (other && !fits(other, from)) return flash(`${def(other).name} 唔可以換去嗰度`);
   if (from.startsWith('bench') && !other) { S.bench.splice(+from.split(':')[1], 1); setAt(to, card); return; }
@@ -910,7 +932,7 @@ function flash(msg) {
 // ---------------- rendering ----------------
 const fill = (txt, name, venue) => (txt || '').replaceAll('{g}', name || '佢').replaceAll('{v}', venue ? VENUES[venue].name : '嗰度');
 // short zone names for the tags on each card (colors match the board quadrants)
-const ZONE_SHORT = { bag: () => stageDef().labels.bag, weekday: () => '平日', weekend: () => '週末', relic: () => '珍藏' };
+const ZONE_SHORT = { bag: () => stageDef().labels.bag, weekday: () => stageDef().key === 'university' ? stageDef().labels.weekday : '平日', weekend: () => '週末', relic: () => '珍藏' };
 
 function cardHTML(card, loc, extra = '') {
   const d = def(card);
@@ -922,29 +944,31 @@ function cardHTML(card, loc, extra = '') {
   const lvl = masteryLv(card);
   const eng = (lvl ? `<span class="lvl">Lv${lvl}</span>` : '') + (d.grow ? `<span class="grow ${(card.grown || 0) >= d.growMax ? 'done' : ''}">📈${card.grown || 0}/${d.growMax}</span>` : '');
   const sel = selected === loc ? ' selected' : '';
-  const old = S.stage < 6 && !inStage(card.id, S.stage + 1) ? '<span class="old" title="下個階段會收埋">⌛</span>' : '';
+  const old = S.stage < STAGES.length - 1 && !inStage(card.id, nextStageIndex()) ? '<span class="old" title="下個階段會收埋">⌛</span>' : '';
   const boost = loc.startsWith('shop') && shopBoost(card.id) ? '<span class="vboost" title="熟悉場地：出現率提升">📍</span>' : '';
   return `<div class="card r-${d.rarity}${card.edition ? ' e-' + card.edition : ''}${sel}" draggable="true" data-loc="${loc}" data-uid="${card.uid}">
     ${ed}${old}${boost}${eng}<div class="emoji">${d.emoji}</div><div class="cname">${d.name}</div>
-    <div class="meta">${meta.join(' ')}</div>${extra}<div class="zones">${d.slot.map(g => `<span class="zone z-${g}">${ZONE_SHORT[g]()}</span>`).join('')}</div></div>`;
+    <div class="meta">${meta.join(' ')}</div>${extra}<div class="zones">${d.slot.filter(g => zoneAllows(card, g)).map(g => `<span class="zone z-${g}">${ZONE_SHORT[g]()}</span>`).join('') || '<span class="zone">後備</span>'}</div></div>`;
 }
 
 function renderTimeline() {
   const moon = moonActive();
   return STAGES.map((st, si) => {
     const cls = si < S.stage ? 'past' : si === S.stage ? 'now' : '';
+    const skipped = st.key === 'university' && S.flags.edu === 'work';
     const ms = STAGE_EVENTS[si].milestone;
-    const boxes = [1, 2, 3].map(t => {
+    const boxes = st.turns.map((_, index) => index + 1).map(t => {
       const key = `${si}-${t}`;
       let label, title;
-      if (S.eventTitles[key]) { title = S.eventTitles[key].join('、'); label = S.eventTitles[key].map(x => x.split(' ')[0]).join(''); }
+      if (skipped) { title = '直接就業，略過大學'; label = '略過'; }
+      else if (S.eventTitles[key]) { title = S.eventTitles[key].join('、'); label = S.eventTitles[key].map(x => x.split(' ')[0]).join(''); }
       else if (si === S.stage && t === S.turn && moon) { title = S.queue.map(evLabel).join('、'); label = S.queue.map(e => evLabel(e).split(' ')[0]).join(''); }
-      else if (t === 3) { title = evLabel(ms); label = evLabel(ms); }
+      else if (t === st.turns.length) { title = evLabel(ms); label = evLabel(ms); }
       else { title = st.turns[t - 1]; label = '❓'; }
       const now = si === S.stage && t === S.turn ? ' cur' : '';
       return `<div class="tb${now}" title="${st.turns[t - 1]}：${title}">${label}</div>`;
     }).join('');
-    return `<div class="stg ${cls}"><div class="stn">${st.name}<small>${st.age}</small></div><div class="tbs">${boxes}</div></div>`;
+    return `<div class="stg ${cls}"><div class="stn">${st.key === 'university' && S.flags.edu === 'asso' ? '大專' : st.name}<small>${st.age}</small></div><div class="tbs" style="--turn-count:${st.turns.length}">${boxes}</div></div>`;
   }).join('');
 }
 
@@ -965,7 +989,7 @@ function girlCard({ g, i }) {
     const lock = g.aff < 40 ? '好感要 ≥ 40' : S.romanceUsed ? '今回合已行動' : '';
     btns.push(`<button class="small love" data-confess="${i}" ${lock ? 'disabled' : ''} title="${lock}">💌 表白 ${lock ? `<small>${lock}</small>` : confessChance(g) + '%'}</button>`);
   }
-  if (i === S.partner && !S.married && S.stage >= 3) {
+  if (i === S.partner && !S.married && S.stage >= STAGE_INDEX.grad) {
     const lock = g.aff < 70 ? '好感要 ≥ 70' : S.money < RING_COST ? `要 $${RING_COST}` : S.romanceUsed ? '今回合已行動' : '';
     btns.push(`<button class="small love" data-propose="${i}" ${lock ? 'disabled' : ''} title="${lock}">💍 求婚 ${lock ? `<small>${lock}</small>` : proposeChance(g) + '% ($' + RING_COST + ')'}</button>`);
   }
@@ -1002,11 +1026,11 @@ function render() {
   const over = res.time > timeMax();
   const eOver = res.energy > res.energyMax;
 
-  $('#week').innerHTML = `${st.name} <small>${st.age}</small> · ${st.turns[S.turn - 1]} <small>(${S.turn}/3)</small>`;
+  $('#week').innerHTML = `${st.name} <small>${st.age}</small> · ${st.turns[S.turn - 1]} <small>(${S.turn}/${turnsInStage()})</small>`;
   $('#res').innerHTML = `
     <div class="res ${over ? 'bad' : ''}" title="時間：每回合可用時數，超出唔可以開始">⏰ 時間 <b>${res.time}/${timeMax()}</b></div>
     <div class="res ${eOver ? 'bad' : ''}" title="精力：每回合可用，有剩會恢復情緒，透支會扣情緒。運動習慣會永久提升上限（而家永久 +${S.perm.energy}）">⚡ 精力 <b>${res.energy}/${res.energyMax}</b></div>
-    <div class="res" title="${isKid() ? '家長俾嘅零用錢（讀大學前）' : '每回合人工'}">${moneyIcon()} ${isKid() ? '零用錢 ' : ''}<b>${fmtPrice(S.money)}</b> <small>(+${S.income}/回合)</small></div>
+    <div class="res" title="${isKid() ? '家長俾嘅零用錢（出嚟做嘢前）' : '每回合人工'}">${moneyIcon()} ${isKid() ? '零用錢 ' : ''}<b>${fmtPrice(S.money)}</b> <small>(+${S.income}/回合)</small></div>
     <div class="res ${S.ec <= 3 ? 'bad' : ''}" title="情緒容量：歸零就崩潰">🫀 情緒 <b>${S.ec}/${S.ecMax}</b></div>
     <div class="res" title="人脈">🤝 人脈 <b>${S.sc}</b></div>`;
   $('#timeline').innerHTML = renderTimeline();
@@ -1033,7 +1057,7 @@ function render() {
     ${Object.keys(S.teamTraining || {}).length ? `<div>🏅 校隊訓練：<b>${Object.entries(S.teamTraining).map(([sport, turns]) => `${SPORT_NAMES[sport]} ${turns}/${NATIONAL_TEAM_TURNS}${turns >= NATIONAL_TEAM_TURNS ? '（港隊已解鎖）' : ''}`).join('、')}</b></div>` : ''}
     ${f.primary ? `<div>🏫 小學：<b>${f.primarySchool?.name || f.primary}</b></div>` : ''}
     ${f.school ? `<div>🏫 中學：<b>${f.school.name}</b></div>` : ''}
-    ${f.edu && S.stage >= 3 ? `<div>📜 學歷：<b>${EDU_NAMES[f.edu]}</b></div>` : ''}
+    ${f.edu && S.stage >= STAGE_INDEX.university ? `<div>📜 學歷：<b>${S.stage === STAGE_INDEX.university && !f.tertiaryGraduated ? (f.edu === 'uni' ? '大學在讀' : '副學士在讀') : EDU_NAMES[f.edu]}</b></div>` : ''}
     ${f.flat ? '<div>🏠 物業：<b>有樓</b></div>' : ''}
     <div title="盤上每張黑化卡每回合 +1；跨階段累積">🖤 黑化分：<b>${S.darkScore || 0}</b>　<small class="muted" title="商店每張卡變黑化嘅機會：3% 起，每買一件 +1%（最多 30%）">黑化率 ${Math.round(darkChance() * 100)}%</small></div>
     <div title="盤上每張月讀卡每回合 +1；跨階段累積">🌙 月讀分：<b>${S.moonScore || 0}</b></div>
@@ -1055,7 +1079,7 @@ function render() {
       ${S.grids[g].map((card, i) => {
         const loc = `grid:${g}:${i}`;
         const hint = selected && getAt(selected) && fits(getAt(selected), loc) ? ' can' : '';
-        return `<div class="cell${hint}" data-loc="${loc}">${card ? cardHTML(card, loc) : `<span class="ph">${GRIDS[g].hint}</span>`}</div>`;
+        return `<div class="cell${hint}" data-loc="${loc}">${card ? cardHTML(card, loc) : `<span class="ph">${st.zoneTags?.[g] ? st.labels[g] : GRIDS[g].hint}</span>`}</div>`;
       }).join('')}
     </div></div>`).join('');
 
@@ -1149,9 +1173,9 @@ function renderModal() {
   const n = S.queue.length;
   let html = '';
   if (M.stage === 'chapter') {
-    html = `<div class="evtag">第 ${S.stage + 1} / 7 階段</div><h2 class="chapter">${st.name} <small>${st.age}</small></h2>
+    html = `<div class="evtag">第 ${S.stage + 1} / ${STAGES.length} 階段</div><h2 class="chapter">${st.name} <small>${st.age}</small></h2>
       <p class="evtext">${st.intro}</p>
-      <p class="muted">每個階段：3 個計劃回合，每回合之後有 2–3 個事件（第 3 回合最後係里程碑）。⚡ 精力上限：${st.energy}・⏰ 時間：${st.time}</p>
+      <p class="muted">本階段：${turnsInStage()} 個計劃回合，每回合之後有 2–3 個事件，最後一回合以里程碑結束。⚡ 精力上限：${st.energy}・⏰ 時間：${st.time}</p>
       <button class="big" id="m-close">開始 →</button>`;
   } else if (M.stage === 'report') {
     html = `<h2>${st.turns[S.turn - 1]} 結算</h2><div class="lines">${M.lines.map(l => `<div>${l}</div>`).join('') || '<div>乜都冇做。</div>'}</div>
@@ -1167,13 +1191,13 @@ function renderModal() {
       ${hasRelic('skip') && !S.uses.skip && !M.ev.milestone ? '<button class="skipbtn" id="m-skip">🤒 請病假：略過呢個事件（每階段一次）</button>' : ''}`;
   } else if (M.stage === 'outcome') {
     const more = S.qi < n - 1;
-    const last = S.turn === TURNS_PER_STAGE;
+    const last = S.turn === turnsInStage();
     html = `<span class="evcount">事件 ${S.qi + 1} / ${n}</span><h2>${M.ev.emoji} ${M.ev.title}</h2>
       ${M.hadCheck ? `<div class="verdict ${M.ok ? 'ok' : 'fail'}">${M.ok ? '成功！' : '失敗……'}</div>` : ''}
       <p class="evtext">${M.text}</p><p class="fx">${M.fxt}</p>
       ${M.notes.length ? `<div class="notes">${M.notes.map(x => `<div>${x}</div>`).join('')}</div>` : ''}
       ${S.endPending ? '<button class="big" id="m-turn">💍 睇結局 →</button>' : more ? `<button class="big" id="m-nextev">下一個事件（${S.qi + 2} / ${n}）→</button>`
-        : `<button class="big" id="m-turn">${last ? `進入 ${STAGES[S.stage + 1].name} →` : '下一回合 →'}</button>`}`;
+        : `<button class="big" id="m-turn">${last ? `進入 ${STAGES[nextStageIndex()]?.name || '結局'} →` : '下一回合 →'}</button>`}`;
   } else if (M.stage === 'relic') {
     html = `<div class="evtag">🎁 ${st.name}完結</div><h2>揀一件法寶</h2>
       <p class="evtext">法寶會一直跟住你，直到呢一鋪完。</p>
@@ -1200,7 +1224,7 @@ function renderModal() {
     html = `<div class="evtag">結局</div><h2 class="end-${M.kind}">${M.title}</h2><p class="evtext">${M.text}</p>
       <div class="recap">
         ${S.flags.primary ? `<div>🏫 小學：${S.flags.primarySchool?.name || S.flags.primary}</div>` : ''}${S.flags.school ? `<div>🏫 中學：${S.flags.school.name}</div>` : ''}
-        ${S.flags.edu && S.stage >= 3 ? `<div>📜 ${EDU_NAMES[S.flags.edu]}</div>` : ''}
+        ${S.flags.edu && S.stage >= STAGE_INDEX.grad ? `<div>📜 ${EDU_NAMES[S.flags.edu]}</div>` : ''}
         <div>${partner ? `${S.married ? '💍 老婆' : '💞 女朋友'}：${partner.name}（${partner.arch.name}・${STAGES[partner.metStage].name}識・化學 ${sign(chem(partner))}）` : '💔 單身'}</div>
         ${S.flags.flat ? '<div>🏠 有樓</div>' : ''}
         ${topV ? `<div>📍 最熟悉嘅地方：${VENUES[topV].emoji}${VENUES[topV].name}（${LOYALTY[venueLevel(topV)].name}）</div>` : ''}
@@ -1227,7 +1251,7 @@ function tooltipFor(card) {
   const cost = [d.time ? `⏰ ${d.time} 個鐘` : '', d.energy ? `⚡ ${d.energy} 精力` : '', card.dur !== null && d.dur < 99 ? `🔧 耐久 ${card.dur}/${d.dur}` : ''].filter(Boolean).join('　');
   return `<div class="tt-head"><span>${d.emoji}</span><b>${d.name}</b><small class="r-${d.rarity}">${RARITY[d.rarity].name}</small></div>
     ${card.edition ? `<div class="tt-ed">${EDITIONS[card.edition].icon} ${EDITIONS[card.edition].name}：${EDITIONS[card.edition].desc}</div>` : ''}
-    <div class="tt-row">📍 放：${d.slot.map(g => stageDef().labels[g]).join(' / ')}　${cost}</div>
+    <div class="tt-row">📍 放：${d.slot.filter(g => zoneAllows(card, g)).map(g => stageDef().labels[g]).join(' / ') || '本階段只可放後備區'}　${cost}</div>
     ${d.requiresSport ? `<div class="tt-row">🏅 入隊條件：先識${SPORT_NAMES[d.requiresSport]}（${S.sports?.[d.requiresSport] ? '已達成' : '未達成'}）。</div>` : ''}
     ${d.requiresTeam ? `<div class="tt-row">🇭🇰 遊戲入選條件：${SPORT_NAMES[d.requiresTeam]}校隊訓練 ${NATIONAL_TEAM_TURNS} 回合（已完成 ${S.teamTraining?.[d.requiresTeam] || 0}）。</div>` : ''}
     ${d.trainsTeam ? `<div class="tt-row">🏅 每完成一回合訓練，累積港隊資格 +1；同一運動每回合最多計一次。</div>` : ''}

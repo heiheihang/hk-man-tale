@@ -1,5 +1,5 @@
 // ============================================================
-// 港男物語 — events for all 7 life stages
+// 港男物語 — events for all 8 life stages
 // Event: { id, title, emoji, meet?: 'new'|'old', needGirl?, needPartner?, needItem?, venue?, when?(s), text(s, venueId), choices(s) }
 // venue: where it happens (+1 熟悉度 on arrival, +4%/level to checks). Can be a function(s) → venue id.
 // needItem: only appears when that card is on your board.
@@ -208,19 +208,63 @@ const STAGE_EVENTS = [
         ] },
     ],
     milestone: { id: 's_ms', title: 'DSE 放榜', emoji: '📜', milestone: true,
-      text: s => 'DSE 放榜日。成績會決定你嘅學歷同第一份人工。',
+      text: s => 'DSE 放榜日。成績決定你進入大學、副學士課程，定係直接就業。',
       choices: s => [
         { label: '靠實力', stat: 'brain', diff: 6,
-          ok: { flag: { edu: 'uni' }, item: 'degree', text: '入到大學！四年後拎到 📜 畢業證書。' },
+          ok: { flag: { edu: 'uni' }, text: '入到大學！準備迎接大學生活，完成課程先會取得畢業證書。' },
           fail: { flag: { edu: 'asso' }, ec: -2, text: '差少少。讀副學士。' } },
         { label: '最後衝刺上天王 cram', cost: { money: 150 }, use: 'assess', useOptional: true, stat: 'brain', diff: 4,
-          ok: { flag: { edu: 'uni' }, item: 'degree', text: '天王貼中題！入到大學。' },
+          ok: { flag: { edu: 'uni' }, text: '天王貼中題！入到大學，準備開始新階段。' },
           fail: { flag: { edu: 'asso' }, ec: -1, text: '貼唔中。讀副學士。' } },
         { label: '唔考，直接出嚟做嘢', ok: { flag: { edu: 'work' }, money: 400, text: '早幾年出嚟搵錢，儲咗 $400。' } },
       ] },
   },
 
-  // ===================== 3 新畢業 22–24 =====================
+  // ===================== 3 大學 18–21 =====================
+  {
+    pool: [
+      { id: 'u_orientation', title: '迎新活動', emoji: '🎓', meet: 'new',
+        text: s => '迎新活動認識咗同學 {g}，大家仲未記熟校園條路。',
+        choices: s => [
+          { label: '主動一齊行校園', stat: 'talk', diff: 5, ok: { aff: 8, stats: { social: 1 }, text: '由飯堂傾到圖書館，交換咗聯絡方法。' }, fail: { aff: 2, text: '有啲尷尬，不過總算識多個人。' } },
+          { label: '參加集體遊戲', stat: 'social', diff: 5, ok: { aff: 6, ec: 1, text: '玩到熟絡咗，約好下次上堂一齊坐。' }, fail: { ec: -1, text: '未適應新環境，決定慢慢嚟。' } },
+        ] },
+      { id: 'u_project', title: '小組報告', emoji: '📊', meet: 'new',
+        text: s => '你同 {g} 分到同一組，要一齊完成報告。',
+        choices: s => [
+          { label: '整理資料同分工', stat: 'brain', diff: 6, ok: { aff: 8, stats: { brain: 1 }, text: '分工清楚，大家都做得輕鬆咗。' }, fail: { ec: -2, text: '資料要重做，好彩隊友肯幫手。' } },
+          { label: '負責口頭匯報', stat: 'talk', diff: 6, ok: { aff: 7, sc: 1, text: '匯報順利，隊友一齊慶祝。' }, fail: { ec: -1, text: '講快咗少少，下次再練好啲。' } },
+        ] },
+      { id: 'u_society', title: '學會招募日', emoji: '🎪', meet: 'new',
+        text: s => '學會攤位排滿校園，{g} 問你有冇興趣加入。',
+        choices: s => [
+          { label: '幫手籌備活動', stat: 'social', diff: 5, ok: { aff: 6, sc: 2, text: '識咗一班新朋友，放學後都唔想走。' }, fail: { ec: -1, text: '安排撞晒期，先學識唔好答應咁多嘢。' } },
+          { label: '睇表演同傾興趣', ok: { aff: 3, ec: 1, text: '發現大家鍾意同一種音樂。' } },
+        ] },
+      { id: 'u_deadline', title: '交功課死線', emoji: '⏳',
+        text: s => '幾份功課同時到期，週末要好好分配時間。',
+        choices: s => [
+          { label: '列好次序逐份做', stat: 'brain', diff: 5, ok: { stats: { brain: 1 }, ec: 1, text: '提早交齊，終於可以休息。' }, fail: { ec: -2, text: '趕喺最後一刻交咗，成個人攰晒。' } },
+          { label: '同同學一齊溫習', cost: { money: 15 }, ok: { stats: { social: 1 }, ec: 1, text: '互相解釋，原來大家都有唔明嘅地方。' } },
+        ] },
+      { id: 'u_canteen', title: '飯堂偶遇', emoji: '🍛', needGirl: true,
+        text: s => '喺飯堂見到 {g}，對面仲有個空位。',
+        choices: s => [
+          { label: '問可唔可以一齊坐', stat: 'talk', diff: 5, ok: { aff: 7, ec: 1, text: '一餐飯傾到落堂鐘響。' }, fail: { aff: 1, text: '佢趕住上堂，下次再傾。' } },
+          { label: '打招呼，下次再約', ok: { aff: 2, text: '佢笑住同你揮手。' } },
+        ] },
+    ],
+    milestone: { id: 'u_ms', title: '畢業', emoji: '🎓', milestone: true,
+      text: s => '最後一份報告交完，就要同校園生活講再見。',
+      choices: s => [
+        { label: '認真完成畢業匯報', stat: 'brain', diff: 5,
+          ok: { flag: { tertiaryGraduated: true }, item: s.flags.edu === 'uni' ? 'degree' : undefined, sc: 2, text: '順利畢業！帶住校園學到嘅嘢，準備進入職場。' },
+          fail: { flag: { tertiaryGraduated: true }, item: s.flags.edu === 'uni' ? 'degree' : undefined, ec: -2, text: '匯報有啲甩漏，好彩最後都完成課程，可以畢業。' } },
+        { label: '同同學影畢業相', ok: { flag: { tertiaryGraduated: true }, item: s.flags.edu === 'uni' ? 'degree' : undefined, ec: 2, text: '大家約好畢業後都要見，下一站係職場。' } },
+      ] },
+  },
+
+  // ===================== 4 新畢業 22–24 =====================
   {
     pool: [
       { id: 'g_colleague', title: '新同事', emoji: '🏢', meet: 'new',
@@ -431,83 +475,83 @@ const STAGE_EVENTS = [
 // ============================================================
 const SHARED_EVENTS = [
   // ---------------- 場地 ----------------
-  { id: 'v_weekend', st: [0, 6], title: '放假去邊？', emoji: '🗺️',
+  { id: 'v_weekend', st: [0, 7], title: '放假去邊？', emoji: '🗺️',
     text: s => '難得放假，你想去邊度？（去邊度就會熟悉嗰度：熟悉度高，商店會多啲嗰度嘅嘢，仲有折。）',
     choices: s => shuffleArr(venuesInStage()).slice(0, 3).map(v => ({
       label: `${VENUES[v].emoji} 去${VENUES[v].name}`,
       ok: { loyalty: { [v]: 2 }, stats: { [VENUES[v].stat]: 1 }, ec: 1, text: VENUES[v].desc },
     })) },
-  { id: 'v_regular', st: [0, 6], title: '熟客', emoji: '🤝', venue: s => bestVenue(),
+  { id: 'v_regular', st: [0, 7], title: '熟客', emoji: '🤝', venue: s => bestVenue(),
     when: s => bestVenue() && venueLevel(bestVenue()) >= 1,
     text: s => '{v}嘅職員認得你：「又係你呀！」',
     choices: s => [
       { label: '收佢送嘅小禮物', ok: { venueItem: true, text: '熟客優惠，免費送你一件。' } },
       { label: '介紹朋友嚟', stat: 'social', diff: 4, ok: { sc: 2, loyalty: { [bestVenue()]: 1 }, text: '你朋友都變咗熟客。' }, fail: { text: '朋友話太遠唔去。' } },
     ] },
-  { id: 'v_library', st: [1, 3], title: '自修室', emoji: '🏛️', venue: 'kt_library', meet: 'new',
+  { id: 'v_library', st: [1, 4], title: '自修室', emoji: '🏛️', venue: 'kt_library', meet: 'new',
     text: s => '{v}自修室，隔離位嘅 {g} 借咗張 post-it 俾你。',
     choices: s => [
       { label: '推介本小說俾佢', use: 'novel', stat: 'talk', diff: 4, ok: { aff: 9, text: '佢話聽日還書時同你傾。' }, fail: { aff: 1, text: '佢話已經睇過。' } },
       { label: '借佢文具', use: 'stationery', ok: { aff: 6, text: '一支筆，開始一段友誼。' } },
       { label: '專心溫書', ok: { stats: { brain: 1 }, text: '效率超高。' } },
     ] },
-  { id: 'v_court', st: [1, 4], title: '球場鬥牛', emoji: '🏀', venue: 'court',
+  { id: 'v_court', st: [1, 5], title: '球場鬥牛', emoji: '🏀', venue: 'court',
     text: s => '{v}三人籃球鬥牛，輸咗請飲嘢。',
     choices: s => [
       { label: '帶自己個波落場', use: 'basketball', stat: 'fit', diff: 5, ok: { sc: 2, stats: { fit: 1 }, text: '連贏三場。' }, fail: { money: -20, ec: -1, text: '輸咗，請成隊飲維他奶。' } },
       { label: '借人個波打', stat: 'fit', diff: 6, ok: { sc: 1, text: '打得唔錯。' }, fail: { money: -20, text: '輸咗要請飲嘢。' } },
       { label: '坐場邊睇', ok: { ec: 1, text: '曬吓太陽。' } },
     ] },
-  { id: 'v_ssp', st: [1, 6], title: '鴨寮街淘寶', emoji: '🔌', venue: 'ssp',
+  { id: 'v_ssp', st: [1, 7], title: '鴨寮街淘寶', emoji: '🔌', venue: 'ssp',
     text: s => '{v}，地攤上面乜都有。',
     choices: s => [
       { label: '同檔主講價', stat: 'talk', diff: 5, ok: { venueItem: true, text: '劈到半價，執到寶！' }, fail: { text: '檔主話：「唔買就走啦！」' } },
       { label: '買件翻新貨', cost: { money: 30 }, ok: { venueItem: 'dark', text: '平係平，但有啲古怪……（🖤 黑化）' } },
       { label: '淨係睇', ok: { stats: { wits: 1 }, text: '你識咗好多電子嘢。' } },
     ] },
-  { id: 'v_temple', st: [0, 6], title: '黃大仙求籤', emoji: '🧧', venue: 'temple',
+  { id: 'v_temple', st: [0, 7], title: '黃大仙求籤', emoji: '🧧', venue: 'temple',
     text: s => '阿媽帶你去{v}求籤。',
     choices: s => [
       { label: '誠心求籤', chance: 50, ok: { ec: 2, stats: { wits: 1 }, text: '上上籤！心情大好。' }, fail: { ec: -1, text: '下下籤……解籤佬叫你小心。' } },
       { label: '捐香油', cost: { money: 20 }, ok: { loyalty: { temple: 2 }, ec: 1, text: '廟祝記得你。' } },
       { label: '還神', use: 'charm', ok: { loyalty: { temple: 3 }, ec: 2, text: '靈符果然靈驗，今次嚟還神。' } },
     ] },
-  { id: 'v_chacha', st: [1, 6], title: '冰室老闆', emoji: '🍜', venue: 'chacha',
+  { id: 'v_chacha', st: [1, 7], title: '冰室老闆', emoji: '🍜', venue: 'chacha',
     text: s => '{v}好爆，老闆叫你幫手執枱。',
     choices: s => [
       { label: '幫手', ok: { sc: 1, money: 20, loyalty: { chacha: 1 }, text: '老闆送你一件西多士同 $20。' } },
       { label: '坐埋一邊睇漫畫', use: 'comic', ok: { ec: 2, text: '漫畫 + 凍檸茶 = 人生。' } },
       { label: '搭枱傾偈', stat: 'social', diff: 4, ok: { sc: 2, stats: { social: 1 }, text: '識咗班街坊。' }, fail: { text: '佢哋只係想食完快啲走。' } },
     ] },
-  { id: 'v_music', st: [0, 6], title: '琴行試音', emoji: '🎼', venue: 'music',
+  { id: 'v_music', st: [0, 7], title: '琴行試音', emoji: '🎼', venue: 'music',
     text: s => '行過{v}，老師叫你入去試吓。',
     choices: s => [
       { label: '彈你部琴', use: 'piano', stat: 'art', diff: 4, ok: { stats: { art: 2 }, sc: 1, text: '老師話你有天分。' }, fail: { ec: -1, text: '彈錯咗好多粒音。' } },
       { label: '攞你支結他出嚟', use: 'guitar', stat: 'art', diff: 5, ok: { stats: { art: 2 }, affAll: 2, text: '全店都停低聽。' }, fail: { ec: -1, text: '斷咗條弦。', damage: { guitar: 2 } } },
       { label: '試吓啲樂器', ok: { stats: { art: 1 }, text: '你鍾意上音樂。' } },
     ] },
-  { id: 'v_mk', st: [2, 6], title: '旺角街頭', emoji: '🎤', venue: 'mk', meet: 'new',
+  { id: 'v_mk', st: [2, 7], title: '旺角街頭', emoji: '🎤', venue: 'mk', meet: 'new',
     text: s => '{v}門口有人街頭表演，{g} 喺前面睇緊。',
     choices: s => [
       { label: '攞結他出嚟夾 band', use: 'guitar', stat: 'art', diff: 6, ok: { aff: 10, money: 80, sc: 2, text: '圍咗一大班人，{g} 拍得最大力。' }, fail: { aff: -2, ec: -2, text: '走音，有人掟咗個銀仔俾你叫你停。' } },
       { label: '行埋去搭訕', stat: 'talk', diff: 6, ok: { aff: 7, text: '你哋一齊睇到完場。' }, fail: { aff: 0, text: '佢戴住耳機，聽唔到你講嘢。' } },
       { label: '去扭蛋', cost: { money: 20 }, ok: { venueItem: true, text: '扭到一件嘢！' } },
     ] },
-  { id: 'v_saikung', st: [2, 6], title: '西貢行山', emoji: '⛰️', venue: 'saikung',
+  { id: 'v_saikung', st: [2, 7], title: '西貢行山', emoji: '⛰️', venue: 'saikung',
     text: s => '同朋友去{v}行山，天色開始暗。',
     choices: s => [
       { label: '帶路抄近路', stat: 'wits', diff: 6, ok: { sc: 2, stats: { fit: 1 }, text: '你帶大家趕到落山食海鮮。' }, fail: { ec: -3, text: '迷路，要打 999。' } },
       { label: '跟大隊慢慢行', stat: 'fit', diff: 4, ok: { ec: 2, text: '日落好靚。' }, fail: { ec: -1, text: '行到腳軟。' } },
       { label: '撐遮擋雨', use: 'umbrella', ok: { ec: 1, sc: 1, text: '突然落雨，全隊得你有遮。' } },
     ] },
-  { id: 'v_central', st: [3, 6], title: 'IFC 商業酒會', emoji: '🥂', venue: 'central',
+  { id: 'v_central', st: [4, 7], title: 'IFC 商業酒會', emoji: '🥂', venue: 'central',
     text: s => '{v}商業酒會，全場西裝友。',
     choices: s => [
       { label: '派卡片識人', use: 'namecard', stat: 'social', diff: 6, ok: { sc: 3, income: 100, text: '識到個大客。人工 +$100。' }, fail: { sc: -1, text: '冇人收你張卡片。' } },
       { label: '著西裝扮專業', use: 'suit', stat: 'look', diff: 6, ok: { sc: 2, text: '有個老闆問你攞聯絡。' }, fail: { ec: -1, text: '你件西裝大咗兩個碼。' } },
       { label: '食完嘢就走', ok: { ec: 1, money: 50, text: '慳咗一餐晚飯。' } },
     ] },
-  { id: 'v_lkf', st: [3, 6], title: '蘭桂坊', emoji: '🍸', venue: 'lkf', meet: 'new', when: s => !isMarried(s),
+  { id: 'v_lkf', st: [4, 7], title: '蘭桂坊', emoji: '🍸', venue: 'lkf', meet: 'new', when: s => !isMarried(s),
     text: s => '星期五晚，{v}。吧枱隔離嘅 {g} 一個人飲緊酒。',
     choices: s => [
       { label: '請佢飲杯嘢', cost: { money: 100 }, stat: 'talk', diff: 6, use: 'cologne', useOptional: true, ok: { aff: 10, text: '佢笑咗。' }, fail: { aff: 1, text: '佢話等緊朋友。' } },
@@ -516,7 +560,7 @@ const SHARED_EVENTS = [
     ] },
 
   // ---------------- 埋單：佢揀你做老實人 ----------------
-  { id: 'x_settle', st: [4, 6], title: '不如結婚啦', emoji: '🧾', meet: 'settler',
+  { id: 'x_settle', st: [5, 7], title: '不如結婚啦', emoji: '🧾', meet: 'settler',
     when: s => !hasPartner(s) && !s.flags.offered && (s.flags.flat || s.money >= 3000 || s.income >= 1400),   // once per run
     text: s => `{g} 突然約你食飯。佢以前身邊啲男仔一個換一個，今晚就望住你講：「我玩夠喇。你人好、${s.flags.flat ? '有樓' : '有積蓄'}、穩定……不如我哋結婚啦。」`,
     choices: s => [
@@ -559,7 +603,7 @@ const SHARED_EVENTS = [
       { label: '一齊玩', stat: 'social', diff: 3, ok: { aff: 10, text: '你哋砌咗條跑道。' }, fail: { aff: 2, text: '你哋爭住玩。' } },
       { label: '收埋佢', ok: { aff: -2, ec: 1, text: '佢走咗。' } },
     ] },
-  { id: 'i_football', st: [1, 3], needItem: 'football', title: '踢爆玻璃', emoji: '💥',
+  { id: 'i_football', st: [1, 4], needItem: 'football', title: '踢爆玻璃', emoji: '💥',
     text: s => '你一腳射門——課室玻璃碎咗。',
     choices: s => [
       { label: '主動認錯', stat: 'talk', diff: 4, ok: { sc: 1, text: '老師欣賞你誠實。' }, fail: { money: -30, ec: -2, text: '要賠錢，仲要見家長。' } },
@@ -578,19 +622,19 @@ const SHARED_EVENTS = [
       { label: '求情', stat: 'talk', diff: 4, ok: { text: '老師放你一馬。' }, fail: { loseItem: 'comic', ec: -1, text: '沒收，學期尾先還。' } },
       { label: '借俾老師睇', stat: 'wits', diff: 5, ok: { sc: 2, text: '原來老師都係漫畫迷！' }, fail: { loseItem: 'comic', sc: -1, text: '老師覺得你挑釁。' } },
     ] },
-  { id: 'i_console', st: [2, 6], needItem: 'console', title: '神隊友', emoji: '🎮', meet: 'new',
+  { id: 'i_console', st: [2, 7], needItem: 'console', title: '神隊友', emoji: '🎮', meet: 'new',
     text: s => '打機時隨機配對到一個好勁嘅隊友：{g}。',
     choices: s => [
       { label: '一齊打通宵', use: 'console', stat: 'wits', diff: 5, ok: { aff: 9, ec: 1, text: '佢加咗你 friend。' }, fail: { aff: 1, ec: -2, text: '你成日拖累佢。' } },
       { label: '約佢出嚟見面', stat: 'talk', diff: 6, ok: { aff: 8, text: '佢本人好 nice。' }, fail: { aff: -2, text: '佢話網友唔見面。' } },
     ] },
-  { id: 'i_phone', st: [2, 6], needItem: 'phone', title: '手機跌落馬桶', emoji: '🚽',
+  { id: 'i_phone', st: [2, 7], needItem: 'phone', title: '手機跌落馬桶', emoji: '🚽',
     text: s => '撲通一聲——你部手機跌咗落馬桶。',
     choices: s => [
       { label: '即刻撈', stat: 'wits', diff: 5, ok: { damage: { phone: 2 }, text: '撈返起身，放落米度焗乾。' }, fail: { loseItem: 'phone', ec: -2, text: '冇得救。' } },
       { label: '拎去鴨寮街整', cost: { money: 80 }, ok: { loyalty: { ssp: 2 }, text: '師傅整好咗，仲送你張保護貼。' } },
     ] },
-  { id: 'i_letter', st: [2, 6], needItem: 'letter', needGirl: true, title: '寫情信', emoji: '💌',
+  { id: 'i_letter', st: [2, 7], needItem: 'letter', needGirl: true, title: '寫情信', emoji: '💌',
     text: s => '你攤開情信紙，諗住寫俾 {g}。（寫咗就冇咗張紙，表白時就冇 +15%）',
     choices: s => [
       { label: '用心寫', stat: 'art', diff: 5, ok: { aff: 15, loseItem: 'letter', text: '佢睇完臉紅紅。' }, fail: { aff: -3, loseItem: 'letter', text: '錯字太多，佢笑咗出嚟。' } },
@@ -602,37 +646,37 @@ const SHARED_EVENTS = [
       { label: '扮自然捲', stat: 'wits', diff: 5, ok: { text: '主任信咗。' }, fail: { loseItem: 'wax', sc: -1, text: '髮蠟被沒收，記缺點。' } },
       { label: '即刻去洗頭', ok: { stats: { look: -1 }, text: '濕晒成個頭返課室。' } },
     ] },
-  { id: 'i_suit', st: [3, 6], needItem: 'suit', title: '大客 present', emoji: '📊', venue: 'central',
+  { id: 'i_suit', st: [4, 7], needItem: 'suit', title: '大客 present', emoji: '📊', venue: 'central',
     text: s => '老細臨時叫你同大客 present。',
     choices: s => [
       { label: '著好西裝上陣', use: 'suit', stat: 'talk', diff: 6, ok: { income: 150, sc: 1, text: '大客即場簽約！人工 +$150。' }, fail: { ec: -2, text: '大客打晒喊露。' } },
       { label: '推俾同事', ok: { sc: -1, ec: 1, text: '同事好嬲。' } },
     ] },
-  { id: 'i_watch', st: [3, 6], needItem: 'watch', title: '名錶', emoji: '⌚',
+  { id: 'i_watch', st: [4, 7], needItem: 'watch', title: '名錶', emoji: '⌚',
     text: s => '地鐵好逼，有隻手摸向你隻名錶。',
     choices: s => [
       { label: '一手捉住佢', stat: 'fit', diff: 6, ok: { sc: 2, text: '捉到賊！上咗新聞。' }, fail: { loseItem: 'watch', ec: -3, text: '隻錶冇咗。' } },
       { label: '大叫', stat: 'talk', diff: 5, ok: { text: '賊仔嚇走咗。' }, fail: { damage: { watch: 5 }, text: '拉扯之間錶面花咗。' } },
     ] },
-  { id: 'i_laptop', st: [3, 6], needItem: 'laptop', title: '電腦中毒', emoji: '🦠',
+  { id: 'i_laptop', st: [4, 7], needItem: 'laptop', title: '電腦中毒', emoji: '🦠',
     text: s => '你部手提電腦彈出一堆廣告——中毒喇。',
     choices: s => [
       { label: '自己搞掂', use: 'laptop', stat: 'wits', diff: 6, ok: { stats: { wits: 1 }, text: '你成功殺毒。' }, fail: { damage: { laptop: 5 }, ec: -2, text: '份 report 冇咗。' } },
       { label: '拎去鴨寮街整', cost: { money: 200 }, ok: { loyalty: { ssp: 2 }, text: '師傅十分鐘搞掂。' } },
     ] },
-  { id: 'i_carkey', st: [4, 6], needItem: 'carkey', needGirl: true, title: '兜風', emoji: '🏎️',
+  { id: 'i_carkey', st: [5, 7], needItem: 'carkey', needGirl: true, title: '兜風', emoji: '🏎️',
     text: s => '星期日，你諗住揸跑車載 {g} 出去。',
     choices: s => [
       { label: '去西貢睇日落', cost: { money: 100 }, ok: { aff: 10, loyalty: { saikung: 2 }, text: '海邊、日落、跑車。' } },
       { label: '喺中環兜圈', stat: 'look', diff: 6, ok: { aff: 6, sc: 1, text: '途人側目。' }, fail: { money: -300, text: '違例泊車，抄牌 $300。' } },
     ] },
-  { id: 'i_deed', st: [4, 6], needItem: 'deed', title: '樓價跌', emoji: '📉',
+  { id: 'i_deed', st: [5, 7], needItem: 'deed', title: '樓價跌', emoji: '📉',
     text: s => '新聞話樓價一年跌咗兩成。',
     choices: s => [
       { label: '照供，長線持有', ok: { ec: -1, text: '自住，唔理佢。' } },
       { label: '賣樓套現', ok: { loseItem: 'deed', money: 2500, flag: { flat: false }, ec: -1, text: '賣咗，袋住 $2500 再租樓住。' } },
     ] },
-  { id: 'i_umbrella', st: [1, 6], needGirl: true, title: '落大雨', emoji: '🌧️',
+  { id: 'i_umbrella', st: [1, 7], needGirl: true, title: '落大雨', emoji: '🌧️',
     text: s => '突然落大雨，{g} 冇帶遮。',
     choices: s => [
       { label: '撐開縮骨遮', use: 'umbrella', ok: { aff: 10, text: '一把遮，兩個人。BGM 自動播放。' } },
