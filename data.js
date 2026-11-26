@@ -234,6 +234,12 @@ const CARDS = {
   wine:      { st: [4, 6], name: '紅酒品鑑', emoji: '🍷', slot: ['weekday', 'weekend'], rarity: 'rare', price: 400, time: 1, tags: ['style', 'social'], fx: { stats: { art: 1, social: 1 }, money: -200 }, desc: '識少少扮代表。' },
 
   // ================= 珍藏品 =================
+  gdragonsignedphoto: { st: [2, 6], name: 'GDragon簽名相', emoji: '📸', slot: ['relic'], rarity: 'rare', price: 100, tags: ['art', 'style'], fx: { stats: { art: 1, look: 1 } }, desc: '簽名相用相框裝好，連襯衫都忍唔住跟住偶像學。' },
+  easonsignedalbum: { st: [2, 6], name: '陳奕迅簽名專輯', emoji: '💿', slot: ['relic'], rarity: 'rare', price: 90, tags: ['art'], fx: { stats: { art: 1 }, ec: 1 }, desc: '排咗好耐先攞到簽名，聽熟嘅歌又多咗一層回憶。' },
+  gemsignedalbum: { st: [2, 6], name: 'GEM簽名專輯', emoji: '💿', slot: ['relic'], rarity: 'rare', price: 90, tags: ['art', 'talk'], fx: { stats: { art: 1, talk: 1 } }, desc: '簽名留喺封面，最鍾意嗰首歌就留喺每日返學條路。' },
+  classmatescarf: { st: [2, 6], name: '女同學織嘅圍巾', emoji: '🧣', slot: ['relic'], rarity: 'rare', price: 70, tags: ['romance', 'family'], fx: { stats: { look: 1 }, ec: 1 }, desc: '有幾針織得唔太齊，但冬天最想戴嘅就係呢條。' },
+  classmatewallet: { st: [2, 6], name: '女同學整嘅銀包', emoji: '👛', slot: ['relic'], rarity: 'rare', price: 70, tags: ['romance', 'family'], fx: { stats: { social: 1 }, ec: 1 }, desc: '手工銀包入面冇幾多錢，倒係每次打開都會記起送禮嗰日。' },
+  macbook:   { st: [2, 6], name: 'Macbook', emoji: '💻', slot: ['relic'], rarity: 'epic', price: 280, tags: ['tech', 'study', 'art'], fx: { stats: { brain: 1, wits: 1 } }, desc: '第一部珍而重之嘅手提電腦，寫報告、剪片，記低成段青春。' },
   goset:     { st: [1, 6], name: '圍棋Set', emoji: '⚫', slot: ['relic'], rarity: 'rare', price: 45, tags: ['study', 'social'], fx: { stats: { brain: 1, wits: 1 } }, desc: '黑白棋子一粒粒落，學識睇遠幾步，唔好淨係顧住眼前。' },
   chessset:  { st: [1, 6], name: '國際象棋Set', emoji: '♟️', slot: ['relic'], rarity: 'rare', price: 45, tags: ['study', 'social'], fx: { stats: { wits: 1, social: 1 } }, desc: '記熟每隻棋點行，約同學落一盤，輸咗再研究。' },
   xiangqiset: { st: [1, 6], name: '中國象棋Set', emoji: '🎲', slot: ['relic'], rarity: 'common', price: 30, tags: ['study', 'family'], fx: { stats: { brain: 1 }, ec: 1 }, desc: '同爸爸捉棋，次次都俾佢提醒「睇住隻馬腳」。' },
