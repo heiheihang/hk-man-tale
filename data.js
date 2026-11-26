@@ -146,6 +146,16 @@ const CARDS = {
   scouts:    { st: [0, 2], name: '童軍',     emoji: '⛺', slot: ['weekend'], rarity: 'common', price: 25, time: 2, tags: ['social', 'sport'], fx: { stats: { social: 1, fit: 1 }, sc: 1 }, desc: '由小童軍開始，日日行一善。' },
 
   // ================= 中學 =================
+  secondaryfootball: { st: [2, 2], name: '足球校隊訓練', emoji: '⚽', slot: ['weekday'], rarity: 'rare', price: 60, time: 3, energy: 3, requiresSport: 'football', tags: ['sport', 'social'], fx: { stats: { fit: 3, social: 1 } }, desc: '要先識足球。放學練走位、傳接同體能，備戰學界賽。' },
+  secondarybasketball: { st: [2, 2], name: '籃球校隊訓練', emoji: '🏀', slot: ['weekday'], rarity: 'rare', price: 60, time: 3, energy: 3, requiresSport: 'basketball', tags: ['sport', 'social'], fx: { stats: { fit: 3, social: 1 } }, desc: '要先識籃球。放學練戰術、罰球同防守，隊友一齊捱。' },
+  secondarytabletennis: { st: [2, 2], name: '乒乓球校隊訓練', emoji: '🏓', slot: ['weekday'], rarity: 'rare', price: 50, time: 2, energy: 2, requiresSport: 'tabletennis', tags: ['sport', 'social'], fx: { stats: { fit: 2, wits: 1, social: 1 } }, desc: '要先識乒乓球。練接旋轉球同雙打配合，放學球枱見。' },
+  secondaryathletics: { st: [2, 2], name: '田徑校隊訓練', emoji: '🏃', slot: ['weekday'], rarity: 'rare', price: 50, time: 3, energy: 3, tags: ['sport', 'social'], fx: { stats: { fit: 3 }, ec: 1 }, desc: '短跑、長跑、跳遠同接力，為學界運動會練好每一步。' },
+  studentcouncil: { st: [2, 2], name: '學生會', emoji: '🗳️', slot: ['weekday'], rarity: 'rare', price: 50, time: 2, energy: 2, tags: ['social', 'talk'], fx: { stats: { social: 2, talk: 1 }, sc: 1 }, desc: '開會、籌備活動、聽同學意見，放學後仲有一堆嘢要夾。' },
+  danceclub: { st: [2, 2], name: '跳舞學會', emoji: '🕺', slot: ['weekday'], rarity: 'common', price: 40, time: 2, energy: 2, tags: ['art', 'sport', 'social'], fx: { stats: { art: 2, fit: 1 } }, desc: '排舞、對拍子，約埋會友為學校表演練到天黑。' },
+  dramaclub: { st: [2, 2], name: '戲劇學會', emoji: '🎭', slot: ['weekday'], rarity: 'common', price: 40, time: 2, energy: 2, tags: ['art', 'talk', 'social'], fx: { stats: { art: 1, talk: 2 } }, desc: '讀劇本、練對白、試角色，慢慢敢喺台上講大聲啲。' },
+  itclub:    { st: [2, 2], name: 'IT學會', emoji: '💻', slot: ['weekday'], rarity: 'common', price: 45, time: 2, energy: 2, tags: ['tech', 'study'], fx: { stats: { brain: 1, wits: 2 } }, desc: '同會友寫小程式、整網頁，電腦室變成放學後嘅基地。' },
+  classmatehome: { st: [2, 2], name: '上女同學屋企', emoji: '🏠', slot: ['weekday'], rarity: 'common', price: 20, time: 2, energy: 1, tags: ['romance', 'social'], fx: { ec: 1 }, special: 'date', desc: '目標好感 ≥ 25 先肯約。一齊做功課、傾音樂同玩遊戲。好感 +(6 + 契合度/12)。' },
+  studyroom: { st: [2, 2], name: '自修室', emoji: '📖', slot: ['weekday'], rarity: 'common', price: 10, time: 2, energy: 1, tags: ['study', 'book'], fx: { stats: { brain: 2 }, ec: -1 }, desc: '帶齊筆記去霸位，靜靜地溫書，抬頭先發現已經天黑。' },
   condom:    { st: [2, 2], name: '避孕套', emoji: '📦', slot: ['bag'], rarity: 'common', price: 20, dur: 3, tags: [], fx: { stats: { wits: 1 } }, desc: '健康教育用品，提醒自己尊重界線、作出負責任嘅選擇。' },
   machete:   { st: [2, 2], name: '開山刀', emoji: '🔪', slot: ['bag'], rarity: 'rare', price: 50, dur: 8, tags: [], fx: { stats: { social: -1 }, ec: -1 }, desc: '唔適合帶返學嘅危險物品，令同學不安，亦令自己惹上麻煩。' },
   cigarettes: { st: [2, 2], name: '菸', emoji: '🚬', slot: ['bag'], rarity: 'common', price: 25, dur: 3, tags: [], fx: { stats: { fit: -1 }, money: -5, ec: -1 }, desc: '以為跟住人就叫成熟，結果零用錢同體能一齊流失。' },
