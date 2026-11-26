@@ -146,6 +146,18 @@ const CARDS = {
   scouts:    { st: [0, 2], name: '童軍',     emoji: '⛺', slot: ['weekend'], rarity: 'common', price: 25, time: 2, tags: ['social', 'sport'], fx: { stats: { social: 1, fit: 1 }, sc: 1 }, desc: '由小童軍開始，日日行一善。' },
 
   // ================= 中學 =================
+  condom:    { st: [2, 2], name: '避孕套', emoji: '📦', slot: ['bag'], rarity: 'common', price: 20, dur: 3, tags: [], fx: { stats: { wits: 1 } }, desc: '健康教育用品，提醒自己尊重界線、作出負責任嘅選擇。' },
+  machete:   { st: [2, 2], name: '開山刀', emoji: '🔪', slot: ['bag'], rarity: 'rare', price: 50, dur: 8, tags: [], fx: { stats: { social: -1 }, ec: -1 }, desc: '唔適合帶返學嘅危險物品，令同學不安，亦令自己惹上麻煩。' },
+  cigarettes: { st: [2, 2], name: '菸', emoji: '🚬', slot: ['bag'], rarity: 'common', price: 25, dur: 3, tags: [], fx: { stats: { fit: -1 }, money: -5, ec: -1 }, desc: '以為跟住人就叫成熟，結果零用錢同體能一齊流失。' },
+  gatsbygel: { st: [2, 2], name: 'Gatsby Gel', emoji: '💈', slot: ['bag'], rarity: 'common', price: 35, dur: 4, tags: ['style', 'brand'], fx: { stats: { look: 2 } }, desc: '朝早對住鏡整咗好耐，返到學校又要壓返低個頭。' },
+  gatsbydeodorant: { st: [2, 2], name: 'Gatsby止汗劑', emoji: '🧴', slot: ['bag'], rarity: 'common', price: 25, dur: 4, tags: ['style'], fx: { stats: { look: 1, social: 1 } }, desc: '體育堂後整理一下，再返課室同同學傾偈。' },
+  lighter:   { st: [2, 2], name: '打火機', emoji: '🔥', slot: ['bag'], rarity: 'common', price: 10, dur: 8, tags: [], fx: { ec: -1 }, desc: '帶返學只會惹來老師追問，袋住都覺得唔自在。' },
+  flashcards: { st: [2, 2], name: 'Flash Card', emoji: '🗂️', slot: ['bag'], rarity: 'common', price: 20, dur: 5, tags: ['study', 'talk'], fx: { stats: { brain: 1, talk: 1 } }, desc: '一面生字，一面解釋，等車嗰幾分鐘都拎出嚟溫。' },
+  tutornotes: { st: [2, 2], name: '補習筆記', emoji: '📑', slot: ['bag'], rarity: 'common', price: 30, dur: 4, tags: ['study'], fx: { stats: { brain: 2 }, ec: -1 }, desc: '螢光筆畫到成頁都係重點，考試前晚先發現未睇完。' },
+  pinholecamera: { st: [2, 2], name: '針孔攝錄機', emoji: '📷', slot: ['bag'], rarity: 'rare', price: 90, dur: 6, tags: ['tech', 'art'], fx: { stats: { art: 1, wits: 1 } }, desc: '拍模型場景同微型短片；拍攝人物前先取得對方同意。' },
+  sanguosha: { st: [2, 2], name: '三國殺', emoji: '⚔️', slot: ['bag'], rarity: 'common', price: 30, dur: 8, tags: ['otaku', 'social'], fx: { stats: { wits: 1, talk: 1 } }, desc: '小息開一局，估身份、講策略，鐘聲響先肯收牌。' },
+  playingcards: { st: [2, 2], name: '牌', emoji: '🃏', slot: ['bag'], rarity: 'common', price: 15, dur: 8, tags: ['social'], fx: { stats: { wits: 1, social: 1 } }, desc: '同同學玩潛烏龜、鬥地主，輸咗就幫手收牌。' },
+  milkcandy82: { st: [2, 2], name: '8.2牛奶糖', emoji: '🍬', slot: ['bag'], rarity: 'common', price: 8, dur: 1, tags: ['social'], fx: { ec: 1, stats: { social: 1 } }, desc: '書包長備一袋，分粒俾隔籬位，奶香味陪住放學條路。' },
   stationery: { st: [1, 2], name: '無印文具', emoji: '🖊️', slot: ['bag'], rarity: 'common', price: 30, dur: 6, tags: ['study'], fx: { stats: { brain: 1 } }, desc: '簡約就是型。' },
   assess:     { st: [1, 2], name: '補充練習', emoji: '📘', slot: ['bag'], rarity: 'common', price: 40, dur: 4, tags: ['study'], fx: { stats: { brain: 2 }, ec: -1 }, desc: '做到手軟。' },
   brandbag:   { st: [2, 2], name: '名牌書包', emoji: '🎒', slot: ['bag'], rarity: 'rare', price: 150, dur: 10, tags: ['brand', 'style'], fx: { stats: { look: 1 }, sc: 1 }, desc: '個logo大過你個頭。' },
@@ -181,6 +193,7 @@ const CARDS = {
   movie:    { st: [2, 6], name: '約佢睇戲',   emoji: '🎬', slot: ['weekend'], rarity: 'rare', price: 40, time: 2, tags: ['romance'], fx: { money: -80 }, special: 'date', desc: '目標好感 ≥ 25 先肯出嚟。好感 +(6 + 契合度/12)。' },
 
   // ================= 出嚟社會 =================
+  adultmagazine: { st: [3, 6], name: '成人雜誌', emoji: '📰', slot: ['bag'], rarity: 'common', price: 35, dur: 3, tags: ['book'], fx: { ec: 1 }, desc: '密封包裝，封面註明只供成年人閱讀。' },
   suit:      { st: [3, 6], name: '西裝',     emoji: '👔', slot: ['bag'], rarity: 'common', price: 250, dur: 8, tags: ['style', 'work'], fx: { stats: { look: 2 } }, desc: '人靠衣裝。' },
   watch:     { st: [3, 6], name: '名錶',     emoji: '⌚', slot: ['bag'], rarity: 'epic', price: 900, dur: 20, tags: ['brand', 'style'], fx: { stats: { look: 1 }, sc: 2 }, desc: '傾生意先望你隻手。' },
   laptop:    { st: [3, 6], name: '手提電腦', emoji: '💻', slot: ['bag'], rarity: 'rare', price: 400, dur: 10, tags: ['tech', 'work'], fx: { stats: { brain: 1, wits: 1 } }, desc: 'Excel 打到半夜。' },
