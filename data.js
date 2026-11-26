@@ -115,6 +115,11 @@ const CARDS = {
   dadletter: { st: [0, 6], name: '爸爸的信', emoji: '✉️', slot: ['relic'], rarity: 'rare', price: 35, tags: ['family'], fx: { ec: 1 }, desc: '「慢慢嚟，爸爸會一直陪住你。」摺好收埋，一世都留住。' },
 
   // ================= 小學 =================
+  footballteam: { st: [1, 1], name: '足球校隊', emoji: '⚽', slot: ['weekday'], rarity: 'rare', price: 40, time: 2, energy: 3, requiresSport: 'football', tags: ['sport', 'social'], fx: { stats: { fit: 2, social: 1 } }, desc: '先識踢波先可以入隊，放學練傳波、走位同合作。' },
+  basketballteam: { st: [1, 1], name: '籃球校隊', emoji: '🏀', slot: ['weekday'], rarity: 'rare', price: 40, time: 2, energy: 3, requiresSport: 'basketball', tags: ['sport', 'social'], fx: { stats: { fit: 2, social: 1 } }, desc: '先識打籃球先可以入隊，練好戰術，等學界比賽上場。' },
+  tabletennisteam: { st: [1, 1], name: '乒乓球校隊', emoji: '🏓', slot: ['weekday'], rarity: 'rare', price: 35, time: 2, energy: 2, requiresSport: 'tabletennis', tags: ['sport', 'social'], fx: { stats: { fit: 1, wits: 1, social: 1 } }, desc: '先識打乒乓球先可以入隊，放學練開波同接旋轉球。' },
+  athleticsteam: { st: [1, 1], name: '田徑校隊', emoji: '🏃', slot: ['weekday'], rarity: 'rare', price: 35, time: 2, energy: 3, tags: ['sport', 'social'], fx: { stats: { fit: 2 }, ec: 1 }, desc: '跑步、跳遠、接力，放學喺跑道練到日落。' },
+  dance:     { st: [1, 1], name: '跳舞', emoji: '🕺', slot: ['weekday'], rarity: 'common', price: 15, time: 1, energy: 2, tags: ['art', 'sport'], fx: { stats: { art: 1, fit: 1 } }, desc: '跟住音樂記舞步，同同學排練學校表演。' },
   breakthroughnotebook: { st: [1, 1], name: '突破出版筆記本', emoji: '📓', slot: ['bag'], rarity: 'common', price: 15, dur: 6, tags: ['book', 'study'], fx: { stats: { brain: 1 } }, desc: '抄低功課、金句同突然諗到嘅故事，頁角畫滿小公仔。' },
   casiocalculator: { st: [1, 1], name: 'Casio計數機', emoji: '🧮', slot: ['bag'], rarity: 'rare', price: 35, dur: 8, tags: ['study', 'tech'], fx: { stats: { wits: 1 } }, desc: '做完功課用嚟核對答案，仲有好多掣未識用。' },
   monoeraser: { st: [1, 1], name: 'Mono擦紙膠', emoji: '🧽', slot: ['bag'], rarity: 'common', price: 10, dur: 5, tags: ['study'], fx: { stats: { brain: 1 } }, desc: '擦得乾淨又唔易爛紙，唔捨得借俾人擦黑晒。' },
@@ -288,6 +293,14 @@ const ARCHETYPES = [
 ];
 
 const TAG_NAMES = { study: '讀書', brand: '名牌', style: '打扮', tech: '科技', sport: '運動', otaku: '毒L嘢', art: '藝術', romance: '浪漫', book: '書', family: '家庭', social: '社交', talk: '口才', work: '工作' };
+
+// A completed turn using equipment or attending practice teaches the named sport permanently.
+const SPORT_NAMES = { football: '足球', basketball: '籃球', tabletennis: '乒乓球' };
+const SPORT_PRACTICE = {
+  football: 'football', paddle: 'tabletennis', basketball: 'basketball',
+  basketballclass: 'basketball', streetcourt: 'basketball',
+};
+for (const [id, sport] of Object.entries(SPORT_PRACTICE)) CARDS[id].trainsSport = sport;
 
 // ---------- ⚡ 精力 cost per turn (activities) ----------
 const ENERGY = {

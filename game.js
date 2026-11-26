@@ -35,6 +35,10 @@ const fmtMoneyFx = v => `${isKid() ? '零用錢' : '$'}${sign(v)}`;
 // ---------------- cards ----------------
 function makeCard(id, edition = null) { return { uid: uid++, id, edition, dur: CARDS[id].dur ?? null }; }
 const def = card => CARDS[card.id];
+function cardRequirement(card) {
+  const sport = def(card).requiresSport;
+  return sport && !S.sports?.[sport] ? `要先識${SPORT_NAMES[sport]}：完成一回合相關用品練習或運動活動。` : null;
+}
 function cardPrice(card) {
   const vip = venuesSelling(card.id).some(v => venueLevel(v) >= 3);
   return Math.round(def(card).price * (card.edition ? EDITIONS[card.edition].priceMul : 1) * (vip ? 0.8 : 1) * (S.relics?.includes('vip') ? 0.9 : 1));
@@ -82,6 +86,7 @@ function newRun() {
   S = {
     stage: 0, turn: 1, bg, flags: {}, stats, ecMax: happy.ecMax, ec: happy.ecMax,
     darkScore: 0, moonScore: 0, bought: 0,
+    sports: {},
     money: finance.money, income: finance.allowance[0], sc: 1, growth: 0, venues: {}, perm: { energy: 0, allowance: 0 }, pref: {}, relics: [], uses: {},
     grids: { bag: [null, null, null, null], weekend: [null, null, null, null], weekday: [null, null, null, null], relic: [null, null, null, null] },
     bench: [], shop: [], rerollCost: 5, girls: [], target: null, partner: null, married: false, endPending: false,
@@ -252,7 +257,7 @@ const curAge = () => TURN_AGES[S.stage][S.turn - 1];
 const finalHeight = () => S.bg.height + S.growth;
 const curHeight = () => Math.round(finalHeight() * (HEIGHT_FRAC[curAge()] || 1));
 // still growing and doing sport this turn → +1cm to adult height
-const growsThisTurn = () => S.stage <= 2 && S.growth < GROWTH_MAX && placed().some(p => (p.grid === 'weekday' || p.grid === 'weekend') && def(p.card).tags.includes('sport'));
+const growsThisTurn = () => S.stage <= 2 && S.growth < GROWTH_MAX && placed().some(p => (p.grid === 'weekday' || p.grid === 'weekend') && def(p.card).tags.includes('sport') && !cardRequirement(p.card));
 function masteryLv(card) { return Math.min(MASTERY_MAX, Math.floor((card.xp || 0) / masteryEvery())); }
 // who your romance cards act on: partner first, else target
 function loveIdx() { return S.partner !== null ? S.partner : S.target; }
@@ -479,11 +484,15 @@ function computeWeek() {
   let time = 0, energy = 0, energyBonus = 0, reveals = 0, apps = 0, blinds = 0, invests = 0;
   const visits = {}, grows = [];
   const editionScores = { dark: 0, moon: 0 };
+  const sportsLearned = new Set();
   const li = loveIdx();
   const g = li === null ? null : S.girls[li];
   const m = g ? match(g) : 0;
   for (const p of placed()) {
     const d = def(p.card);
+    const requirement = cardRequirement(p.card);
+    if (requirement) { lines.push(`${d.emoji} ${d.name}：${requirement}`); continue; }
+    if (d.trainsSport) sportsLearned.add(d.trainsSport);
     if (p.card.edition === 'dark' || p.card.edition === 'moon') editionScores[p.card.edition]++;
     const scheduled = p.grid === 'weekday' || p.grid === 'weekend';
     if (scheduled) { time += d.time || 0; energy += d.energy || 0; if (d.venue) visits[d.venue] = (visits[d.venue] || 0) + 1; }
@@ -527,7 +536,7 @@ function computeWeek() {
   else { const rest = Math.floor((energyMax - energy) / 2); if (rest) { t.ec += rest; lines.push(`😴 精力有剩，休息：情緒+${rest}`); } }
   if (growsThisTurn()) lines.push(`📏 運動幫手長高：成年身高 +1cm（${S.growth + 1}/${GROWTH_MAX}）`);
   for (const gr of grows) lines.push(`📈 ${def(gr.card).emoji}${def(gr.card).name}：永久 ${GROW_NAMES[gr.k]} +${gr.v}（${(gr.card.grown || 0) + gr.v}/${def(gr.card).growMax}）`);
-  return { fx: t, lines, time, energy, energyMax, reveals, apps, blinds, invests, visits, grows, editionScores };
+  return { fx: t, lines, time, energy, energyMax, reveals, apps, blinds, invests, visits, grows, editionScores, sportsLearned: [...sportsLearned] };
 }
 
 // apply an fx object. girlIdx = the event's girl, venue = the event's venue
@@ -599,10 +608,15 @@ function startWeek() {
     if (gr.k === 'allowance') { S.perm.allowance += gr.v; S.income += gr.v; }
   }
   for (const p of placed()) {
-    if ((p.grid !== 'weekday' && p.grid !== 'weekend') || !def(p.card).fx.stats) continue;
+    if ((p.grid !== 'weekday' && p.grid !== 'weekend') || !def(p.card).fx.stats || cardRequirement(p.card)) continue;
     const before = masteryLv(p.card);
     p.card.xp = (p.card.xp || 0) + 1;
     if (masteryLv(p.card) > before) lines.push(`🎓 ${def(p.card).emoji}${def(p.card).name} 熟練度升到 Lv${masteryLv(p.card)}（${STATS[Object.keys(def(p.card).fx.stats)[0]].name}再 +1）`);
+  }
+  S.sports ||= {};
+  for (const sport of res.sportsLearned) {
+    if (!S.sports[sport]) lines.push(`🏅 學識${SPORT_NAMES[sport]}，可以參加相應校隊。`);
+    S.sports[sport] = true;
   }
   for (const [v, n] of Object.entries(res.visits)) { lines.push(`📍 ${VENUES[v].emoji}${VENUES[v].name} 熟悉度 +${n}`); const m = visitVenue(v, n); if (m) lines.push(m); }
   // durability
@@ -816,7 +830,7 @@ function setAt(loc, card) {
 function fits(card, loc) {
   const [kind, g] = loc.split(':');
   if (kind === 'bench') return true;
-  if (kind === 'grid') return def(card).slot.includes(g);
+  if (kind === 'grid') return def(card).slot.includes(g) && !cardRequirement(card);
   return false;
 }
 function buy(i) {
@@ -842,6 +856,8 @@ function sell(loc) {
 }
 function move(from, to) {
   if (from === to) return;
+  const candidate = getAt(from);
+  if (to.startsWith('grid:') && candidate && cardRequirement(candidate)) return flash(cardRequirement(candidate));
   if (from.startsWith('shop')) {
     const loc = buy(+from.split(':')[1]);
     if (!loc || to === 'bench' || to.startsWith('bench')) return;
@@ -1001,6 +1017,7 @@ function render() {
     <div>👪 家庭：<b>${bg.happy.name}</b></div>
     <div>📏 身高：<b>${curHeight()}cm</b>${S.stage <= 2 ? ` <small class="muted">（預計成年 ~${finalHeight()}cm）</small>` : ''}　😐 樣貌：<b>${'★'.repeat(bg.face)}${'☆'.repeat(3 - bg.face)}</b></div>
     ${bg.overseas ? '<div>✈️ 海外經驗：<b>有</b></div>' : ''}
+    <div>🏅 運動技能：<b>${Object.keys(S.sports || {}).filter(sport => S.sports[sport]).map(sport => SPORT_NAMES[sport]).join('、') || '未學識'}</b></div>
     ${f.primary ? `<div>🏫 小學：<b>${f.primarySchool?.name || f.primary}</b></div>` : ''}
     ${f.school ? `<div>🏫 中學：<b>${f.school.name}</b></div>` : ''}
     ${f.edu && S.stage >= 3 ? `<div>📜 學歷：<b>${EDU_NAMES[f.edu]}</b></div>` : ''}
@@ -1198,6 +1215,8 @@ function tooltipFor(card) {
   return `<div class="tt-head"><span>${d.emoji}</span><b>${d.name}</b><small class="r-${d.rarity}">${RARITY[d.rarity].name}</small></div>
     ${card.edition ? `<div class="tt-ed">${EDITIONS[card.edition].icon} ${EDITIONS[card.edition].name}：${EDITIONS[card.edition].desc}</div>` : ''}
     <div class="tt-row">📍 放：${d.slot.map(g => stageDef().labels[g]).join(' / ')}　${cost}</div>
+    ${d.requiresSport ? `<div class="tt-row">🏅 入隊條件：先識${SPORT_NAMES[d.requiresSport]}（${S.sports?.[d.requiresSport] ? '已達成' : '未達成'}）。</div>` : ''}
+    ${d.trainsSport ? `<div class="tt-row">🏅 放上盤完成一回合練習，就會學識${SPORT_NAMES[d.trainsSport]}；學識後換走用品亦會保留。</div>` : ''}
     ${fx ? `<div class="tt-row">每回合：${fx}</div>` : ''}
     ${d.grow ? `<div class="tt-row eng">📈 引擎：每回合永久 ${GROW_NAMES[Object.keys(d.grow)[0]]} +${Object.values(d.grow)[0]}（呢張卡最多 +${d.growMax}，已累積 ${card.grown || 0}）</div>` : ''}
     ${(d.time && d.fx.stats) ? `<div class="tt-row eng">🎓 熟練度：連續排 ${masteryEvery()} 回合升一級（Lv${masteryLv(card)}/${MASTERY_MAX}，每級${STATS[Object.keys(d.fx.stats)[0]].name} +1）。換走會保留，賣走就冇。</div>` : ''}
