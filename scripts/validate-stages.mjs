@@ -69,7 +69,7 @@ assert(!fits(makeCard('phone'), 'grid:bag:0'));
 assert(fits(makeCard('app'), 'grid:weekday:0'));
 assert(!fits(makeCard('gaming'), 'grid:weekday:0'));
 assert(!findCard('degree'), 'No diploma on admission');
-assert($('#board').innerHTML.includes('穿搭') && $('#board').innerHTML.includes('交友app'));
+assert($('#wardrobe').innerHTML.includes('三套穿搭') && $('#board').innerHTML.includes('交友app'));
 assert($('#bg').innerHTML.includes('大學在讀'));
 for (let i = 0; i < 30; i++) {
   rollShop();

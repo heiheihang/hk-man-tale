@@ -37,31 +37,38 @@ const STAGES = [
     partnerCost: 60, labels: { bag: '穿搭', weekday: '交友app', weekend: '週末', relic: '珍藏品' },
     zoneTags: { bag: 'style', weekday: 'datingapp' },
     turns: ['Year 1', 'Year 2', 'Year 3–4'],
-    intro: '大學生活開始！認識新朋友、參加活動，亦要完成學業。<br>「書包」轉為<b>穿搭</b>，只放打扮用品；「課後」轉為<b>交友app</b>。其他活動可以安排喺週末。<br>仍然用零用錢；最後一回合完成畢業，先進入職場。',
-    starter: ['casualoutfit', 'app'] },
+    intro: '大學生活開始！認識新朋友、參加活動，亦要完成學業。<br>「書包」轉為<b>三套穿搭</b>，每套上身、外套、下身、鞋，加三格配飾，只有使用中一套生效；「課後」轉為<b>交友app</b>。其他活動可以安排喺週末。<br>仍然用零用錢；最後一回合完成畢業，先進入職場。',
+    starter: ['casualoutfit', 'jeans', 'sneakers', 'app'] },
   { key: 'grad', name: '新畢業', age: '22–24 歲', time: 8, energy: 9, diffAdd: 8, norm: 23, reroll: 60, romance: true, living: 450,
-    partnerCost: 200, labels: { bag: '公事包', weekday: '一至五放工後', weekend: '週末', relic: '珍藏品' },
+    partnerCost: 200, labels: { bag: '穿搭', weekday: '一至五放工後', weekend: '週末', relic: '珍藏品' },
     turns: ['22 歲', '23 歲', '24 歲'],
     intro: '出嚟社會做嘢。🧧 零用錢變 💰 人工（儲落嘅零用錢變積蓄）。<br>💍 由呢個階段開始可以「求婚」（好感 ≥ 70，要 $1000 戒指）。<b>結婚就係呢一鋪嘅結局</b>——四十歲前搵到啱嘅人。',
     starter: ['overtime', 'app'] },
   { key: 'late20', name: '二十尾', age: '27–29 歲', time: 8, energy: 9, diffAdd: 12, norm: 28, reroll: 80, romance: true, living: 600,
-    partnerCost: 300, labels: { bag: '公事包', weekday: '一至五放工後', weekend: '週末', relic: '珍藏品' },
+    partnerCost: 300, labels: { bag: '穿搭', weekday: '一至五放工後', weekend: '週末', relic: '珍藏品' },
     turns: ['27 歲', '28 歲', '29 歲'],
     intro: '朋友一個二個結婚，屋企開始催。<br>三十歲前要唔要上車？',
     starter: ['hotpot'] },
   { key: 'early30', name: '三十頭', age: '30–34 歲', time: 8, energy: 8, diffAdd: 13, norm: 32, reroll: 100, romance: true, living: 700,
-    partnerCost: 350, decay: { fit: 1, look: 1 }, labels: { bag: '公事包', weekday: '一至五放工後', weekend: '週末', relic: '珍藏品' },
+    partnerCost: 350, decay: { fit: 1, look: 1 }, labels: { bag: '穿搭', weekday: '一至五放工後', weekend: '週末', relic: '珍藏品' },
     turns: ['30 歲', '32 歲', '34 歲'],
     intro: '新陳代謝開始慢：每回合 體能 -1、外表 -1。<br>💐 相親 解鎖——阿媽出手。',
     starter: ['blind'] },
   { key: 'forty', name: '四十', age: '40 歲', time: 8, energy: 7, diffAdd: 15, norm: 36, reroll: 120, romance: true, living: 800,
-    partnerCost: 400, decay: { fit: 2, look: 1 }, energyDecay: 1, labels: { bag: '公事包', weekday: '一至五放工後', weekend: '週末', relic: '珍藏品' },
+    partnerCost: 400, decay: { fit: 2, look: 1 }, energyDecay: 1, labels: { bag: '穿搭', weekday: '一至五放工後', weekend: '週末', relic: '珍藏品' },
     turns: ['38 歲', '39 歲', '40 歲'],
     intro: '中年。體能 -2、外表 -1、永久 ⚡精力 -1 每回合（要靠運動頂住）。<br>最後機會：四十歲生日前未結婚，就會以單身結局收場。',
     starter: [] },
 ];
 
 const STAGE_INDEX = Object.fromEntries(STAGES.map((stage, index) => [stage.key, index]));
+const OUTFIT_SLOTS = [
+  { key: 'top', name: '上身' }, { key: 'outer', name: '上身（外套）' },
+  { key: 'bottom', name: '下身' }, { key: 'shoes', name: '鞋' },
+  { key: 'accessory', name: '配飾 1' }, { key: 'accessory', name: '配飾 2' },
+  { key: 'accessory', name: '配飾 3' },
+];
+const OUTFIT_COUNT = 3;
 
 // Four 2x2 grids laid out as one 4x4 board, so cards can be adjacent across grid borders.
 //   書包 | 週末
@@ -224,11 +231,17 @@ const CARDS = {
   movie:    { st: [2, 7], name: '約佢睇戲',   emoji: '🎬', slot: ['weekend'], rarity: 'rare', price: 40, time: 2, tags: ['romance'], fx: { money: -80 }, special: 'date', desc: '目標好感 ≥ 25 先肯出嚟。好感 +(6 + 契合度/12)。' },
 
   // ================= 大學 =================
-  casualoutfit: { st: [3, 3], name: '休閒穿搭', emoji: '👕', slot: ['bag'], rarity: 'common', price: 40, dur: 8, tags: ['style'], fx: { stats: { look: 1, social: 1 } }, desc: '揀套舒服又啱自己嘅衫，去上堂、見朋友都自在。' },
+  lightjacket: { st: [3, 7], name: '輕便外套', emoji: '🧥', slot: ['bag'], rarity: 'common', price: 45, dur: 8, outfitType: 'outer', tags: ['style'], fx: { stats: { look: 1 }, ec: 1 }, desc: '冷氣房同放學條路都用得着，襯衫又多個選擇。' },
+  jeans: { st: [3, 7], name: '牛仔褲', emoji: '👖', slot: ['bag'], rarity: 'common', price: 40, dur: 8, outfitType: 'bottom', tags: ['style'], fx: { stats: { look: 1 } }, desc: '一條啱身嘅牛仔褲，行校園同行街都舒服。' },
+  sneakers: { st: [3, 7], name: '波鞋', emoji: '👟', slot: ['bag'], rarity: 'common', price: 45, dur: 8, outfitType: 'shoes', tags: ['style', 'sport'], fx: { stats: { look: 1 } }, desc: '出門前抹乾淨鞋面，今日由舒服開始。' },
+  canvasbag: { st: [3, 7], name: '帆布袋', emoji: '👜', slot: ['bag'], rarity: 'common', price: 25, dur: 8, outfitType: 'accessory', tags: ['style'], fx: { stats: { social: 1 } }, desc: '印住鍾意嘅圖案，有時就係打開話題嘅第一句。' },
+  fashionglasses: { st: [3, 7], name: '造型眼鏡', emoji: '👓', slot: ['bag'], rarity: 'common', price: 25, dur: 8, outfitType: 'accessory', tags: ['style'], fx: { stats: { look: 1 } }, desc: '試咗幾副，終於揀到一副似返自己嘅眼鏡。' },
+  bracelet: { st: [3, 7], name: '手繩', emoji: '📿', slot: ['bag'], rarity: 'common', price: 20, dur: 8, outfitType: 'accessory', tags: ['style'], fx: { ec: 1 }, desc: '手腕上嘅小細節，記住揀自己鍾意嘅顏色。' },
+  casualoutfit: { st: [3, 7], name: '休閒上衣', emoji: '👕', slot: ['bag'], rarity: 'common', price: 40, dur: 8, outfitType: 'top', tags: ['style'], fx: { stats: { look: 1, social: 1 } }, desc: '揀件舒服又啱自己嘅上衣，去上堂、見朋友都自在。' },
 
   // ================= 出嚟社會 =================
   adultmagazine: { st: [3, 7], name: '成人雜誌', emoji: '📰', slot: ['bag'], rarity: 'common', price: 35, dur: 3, tags: ['book'], fx: { ec: 1 }, desc: '密封包裝，封面註明只供成年人閱讀。' },
-  suit:      { st: [4, 7], name: '西裝',     emoji: '👔', slot: ['bag'], rarity: 'common', price: 250, dur: 8, tags: ['style', 'work'], fx: { stats: { look: 2 } }, desc: '人靠衣裝。' },
+  suit:      { st: [4, 7], name: '西裝',     emoji: '👔', slot: ['bag'], rarity: 'common', price: 250, dur: 8, outfitType: 'outer', tags: ['style', 'work'], fx: { stats: { look: 2 } }, desc: '人靠衣裝。' },
   watch:     { st: [4, 7], name: '名錶',     emoji: '⌚', slot: ['bag'], rarity: 'epic', price: 900, dur: 20, tags: ['brand', 'style'], fx: { stats: { look: 1 }, sc: 2 }, desc: '傾生意先望你隻手。' },
   laptop:    { st: [4, 7], name: '手提電腦', emoji: '💻', slot: ['bag'], rarity: 'rare', price: 400, dur: 10, tags: ['tech', 'work'], fx: { stats: { brain: 1, wits: 1 } }, desc: 'Excel 打到半夜。' },
   namecard:  { st: [4, 7], name: '卡片',     emoji: '📇', slot: ['bag'], rarity: 'common', price: 100, dur: 6, tags: ['work', 'social'], fx: { sc: 2 }, desc: 'Senior Associate（其實係 junior）。' },

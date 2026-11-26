@@ -53,9 +53,9 @@ header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; pad
 #week small { font-size: 12px; color: #cfc6a8; }
 main { display: grid; grid-template-columns: 250px minmax(420px, 1fr) 340px; gap: 14px; padding: 0 20px 30px; align-items: start; }
 .panel { background: var(--paper2); border: 2px solid var(--ink); border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; box-shadow: 3px 3px 0 rgba(31,42,68,.15); }
-.panel h3 { margin: 0 0 10px; font-size: 18px; display: flex; align-items: center; gap: 8px; }
-.panel h3 small { font-size: 12px; }
-.panel h3 button { margin-left: auto; }
+.panel h2 { margin: 0 0 10px; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+.panel h2 small { font-size: 12px; }
+.panel h2 button { margin-left: auto; }
 
 /* stats */
 .stat { display: grid; grid-template-columns: 1fr auto 34px; align-items: center; gap: 2px 8px; margin-bottom: 7px; }
@@ -65,10 +65,33 @@ main { display: grid; grid-template-columns: 250px minmax(420px, 1fr) 340px; gap
 .stat .bar { grid-column: 1 / -1; }
 .up { color: var(--green); } .down { color: var(--red); }
 .bar { height: 6px; background: #ece6d6; border-radius: 4px; overflow: hidden; }
-.bar > div { height: 100%; background: var(--ink); transition: width .4s; }
+.bar > div { width: 100%; height: 100%; background: var(--ink); transform-origin: left center; transition: transform .4s; }
 .bar.pink > div { background: var(--pink); }
 .bar.blue > div { background: var(--blue); }
 #bg div { margin-bottom: 4px; font-size: 13px; }
+#wardrobe { margin-bottom: 16px; }
+#wardrobe[hidden] { display: none; }
+.wardrobe-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.wardrobe-heading h3 { margin: 0; font-size: 18px; }
+.wardrobe-heading > span, .wardrobe-help { color: var(--ink-soft); font-size: 13px; }
+.outfit-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+.outfit-tab { min-height: 48px; padding: 8px 4px; border-width: 1px; }
+.outfit-tab b, .outfit-tab small { display: block; }
+.outfit-tab small { font-size: 12px; margin-top: 4px; }
+.outfit-tab.active { background: var(--ink); color: var(--paper2); }
+.outfit-tab.active small { color: #cfc6a8; }
+.outfit-slots { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.accessory-slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.outfit-label { display: block; font-size: 14px; margin-bottom: 4px; }
+.outfit-cell { width: 100%; min-height: 104px; padding: 0; color: var(--ink); }
+.outfit-cell .card { width: 100%; }
+.outfit-cell .ph { color: var(--ink-soft); font-size: 13px; }
+.outfit-cell:focus-visible, .outfit-tab:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+.wardrobe-help { margin: 8px 0 0; line-height: 1.6; }
+#board.with-wardrobe .q-weekend { border-right: 2px dashed var(--ink-soft); }
+#board.with-wardrobe .q-weekday { border-right: 0; border-bottom: 2px dashed var(--ink-soft); }
+#board.with-wardrobe .q-relic { grid-column: 1 / -1; }
+#board.with-wardrobe .q-relic .cells { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .log #log { max-height: 220px; overflow: auto; font-size: 12px; color: var(--ink-soft); }
 .log #log div { padding: 2px 0; border-bottom: 1px dotted var(--line); }
 
@@ -179,6 +202,12 @@ main { display: grid; grid-template-columns: 250px minmax(420px, 1fr) 340px; gap
   #timeline { grid-template-columns: repeat(8, minmax(128px, 1fr)); overflow-x: auto; }
   #bench { grid-template-columns: repeat(4, 1fr); }
 }
+@media (max-width: 600px) {
+  .wardrobe-heading { align-items: flex-start; flex-direction: column; }
+  .outfit-slots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .outfit-tab small { font-size: 11px; }
+  #board.with-wardrobe .q-relic .cells { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 
 /* partner lane */
 #partner { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; border: 2px dashed var(--pink); border-radius: 10px; padding: 6px 10px; margin-bottom: 10px; background: #fff7fa; font-size: 13px; }
@@ -244,7 +273,7 @@ button.small small { font-size: 10px; }
 /* dating preference & chemistry */
 .bar.chem { position: relative; background: #ece6d6; }
 .bar.chem::after { content: ''; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--ink-soft); }
-.bar.chem > div { position: absolute; top: 0; height: 100%; }
+.bar.chem > div { position: absolute; top: 0; left: 50%; height: 100%; }
 .bar.chem > div.pos { background: var(--pink); }
 .bar.chem > div.neg { background: #8a94a8; }
 .traits { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; align-items: center; }
@@ -293,3 +322,7 @@ button.small small { font-size: 10px; }
 .skipbtn { margin-top: 8px; width: 100%; padding: 6px; font-size: 13px; border-style: dashed; background: transparent; }
 .forcebtn { margin: -4px 0 4px 18px; padding: 3px 10px; font-size: 12px; background: #2b2233; color: #ffd166; border-color: #2b2233; align-self: flex-start; }
 .darkrate { font-family: var(--sans); font-size: 12px; background: #2b2233; color: #e6d3ff; border-radius: 12px; padding: 1px 8px; cursor: help; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bar > div { transition: none; }
+}

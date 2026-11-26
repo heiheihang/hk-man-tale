@@ -24,8 +24,42 @@ const stageDef = () => S.stage === STAGE_INDEX.university && S.flags.edu === 'as
 const turnsInStage = () => stageDef().turns.length;
 const nextStageIndex = () => S.stage === STAGE_INDEX.secondary && S.flags.edu === 'work'
   ? STAGE_INDEX.grad : S.stage + 1;
+const hasWardrobe = () => S.stage >= STAGE_INDEX.university;
+const inventoryCells = () => [...new Set([...Object.values(S.grids), ...(S.outfits || [])])];
+const ownedCards = () => [...inventoryCells().flat().filter(Boolean), ...S.bench];
+function outfitType(card) {
+  const d = def(card);
+  return d.slot.includes('bag') && d.tags.includes('style') ? (d.outfitType || 'accessory') : null;
+}
+function outfitFits(card, slot) {
+  return hasWardrobe() && Number.isInteger(slot) && OUTFIT_SLOTS[slot]?.key === outfitType(card);
+}
+function prepareWardrobe() {
+  if (!hasWardrobe()) return;
+  if (!S.wardrobeReady) {
+    const previous = [...S.grids.bag].filter(Boolean);
+    S.activeOutfit = 0;
+    S.grids.bag = S.outfits[0];
+    S.wardrobeReady = true;
+    for (const card of previous) {
+      const slot = S.grids.bag.findIndex((c, index) => !c && outfitFits(card, index));
+      if (slot >= 0) S.grids.bag[slot] = card;
+      else if (S.bench.length < benchMax()) S.bench.push(card);
+      else { S.money += sellPrice(card); log(`${def(card).name} 已收起，後備區已滿，退回 ${fmtPrice(sellPrice(card))}`); }
+    }
+  } else S.grids.bag = S.outfits[S.activeOutfit];
+}
+function switchOutfit(index) {
+  if (S.modal || !hasWardrobe() || !Number.isInteger(index) || index < 0 || index >= OUTFIT_COUNT) return;
+  const restoreFocus = typeof document !== 'undefined' && document.activeElement?.matches?.('[data-outfit]');
+  S.activeOutfit = index;
+  S.grids.bag = S.outfits[index];
+  selected = null;
+  render();
+  if (restoreFocus) $(`[data-outfit="${index}"]`)?.focus();
+}
 function zoneAllows(card, grid) {
-  const requiredTag = stageDef().zoneTags?.[grid];
+  const requiredTag = grid === 'bag' && hasWardrobe() ? 'style' : stageDef().zoneTags?.[grid];
   return def(card).slot.includes(grid) && (!requiredTag || def(card).tags.includes(requiredTag));
 }
 // ---- 法寶 ----
@@ -99,6 +133,7 @@ function newRun() {
     darkScore: 0, moonScore: 0, bought: 0,
     sports: {},
     teamTraining: {},
+    outfits: Array.from({ length: OUTFIT_COUNT }, () => Array(OUTFIT_SLOTS.length).fill(null)), activeOutfit: 0, wardrobeReady: false,
     money: finance.money, income: finance.allowance[0], sc: 1, growth: 0, venues: {}, perm: { energy: 0, allowance: 0 }, pref: {}, relics: [], uses: {},
     grids: { bag: [null, null, null, null], weekend: [null, null, null, null], weekday: [null, null, null, null], relic: [null, null, null, null] },
     bench: [], shop: [], rerollCost: 5, girls: [], target: null, partner: null, married: false, endPending: false,
@@ -121,13 +156,15 @@ function startStage(i, first = false) {
   const st = stageDef();
   // outgrown cards are auto-sold
   const gone = [];
-  for (const cells of Object.values(S.grids)) cells.forEach((c, k) => { if (c && !inStage(c.id)) { gone.push(c); cells[k] = null; } });
+  for (const cells of inventoryCells()) cells.forEach((c, k) => { if (c && !inStage(c.id)) { gone.push(c); cells[k] = null; } });
   S.bench = S.bench.filter(c => { if (!inStage(c.id)) { gone.push(c); return false; } return true; });
   if (gone.length) {
     const refund = gone.reduce((t, c) => t + sellPrice(c), 0);
     S.money += refund;
     log(`你大個咗：${gone.map(c => def(c).emoji + def(c).name).join('、')} 收埋咗（退 ${fmtPrice(refund)}）`);
   }
+  const firstWardrobe = hasWardrobe() && !S.wardrobeReady;
+  prepareWardrobe();
   // Reconfigure changed zones without letting old school items count as outfits or dating apps.
   for (const p of placed()) {
     if (zoneAllows(p.card, p.grid)) continue;
@@ -139,13 +176,15 @@ function startStage(i, first = false) {
     else { S.money += sellPrice(p.card); log(`${def(p.card).name} 唔適合新分類，後備區已滿，已退回 ${fmtPrice(sellPrice(p.card))}`); }
   }
   // starter cards: auto-place if a cell is free and the schedule has room, else bench
-  const owned = new Set([...placed().map(p => p.card.id), ...S.bench.map(c => c.id)]);
-  for (const id of st.starter) {
+  const owned = new Set(ownedCards().map(card => card.id));
+  const starters = firstWardrobe ? [...new Set([...st.starter, 'casualoutfit', 'jeans', 'sneakers'])] : st.starter;
+  for (const id of starters) {
     if (owned.has(id)) continue;
     const card = makeCard(id);
     const load = scheduleLoad();
     const room = load.time + (CARDS[id].time || 0) <= timeMax() && load.energy + (CARDS[id].energy || 0) <= st.energy;
-    const spot = room && CARDS[id].slot.filter(g => zoneAllows(card, g)).map(g => [g, S.grids[g].indexOf(null)]).find(([, k]) => k >= 0);
+    const spot = room && CARDS[id].slot.filter(g => zoneAllows(card, g))
+      .map(g => [g, S.grids[g].findIndex((c, index) => !c && fits(card, `grid:${g}:${index}`))]).find(([, k]) => k >= 0);
     if (spot) S.grids[spot[0]][spot[1]] = card; else if (S.bench.length < benchMax()) S.bench.push(card);
   }
   // income
@@ -202,7 +241,7 @@ const SHOP_CATS = ['bag', 'weekday', 'weekend', 'relic'];
 const DARK_BASE = 0.03, DARK_PER_BUY = 0.01, DARK_MAX = 0.30;
 const darkChance = () => Math.min(DARK_MAX, DARK_BASE + DARK_PER_BUY * (S.bought || 0));
 function rollShop() {
-  const owned = new Set([...placed(), ...S.bench.map(card => ({ card }))].map(p => p.card.id));
+  const owned = new Set(ownedCards().map(card => card.id));
   const prev = new Set((S.shop || []).filter(Boolean).map(c => c.id));
   const ids = Object.keys(CARDS).filter(id => inStage(id) && !CARDS[id].noshop && !stageDef().starter.includes(id)
     && !owned.has(id) && CARDS[id].slot.some(grid => zoneAllows({ id }, grid)));   // only offer cards usable in this stage's zones
@@ -231,7 +270,14 @@ function placed() {
   const out = [];
   for (const [g, cells] of Object.entries(S.grids)) {
     const [r0, c0] = GRIDS[g].origin;
-    cells.forEach((card, i) => { if (card) out.push({ card, grid: g, idx: i, r: r0 + (i >> 1), c: c0 + (i & 1) }); });
+    cells.forEach((card, i) => {
+      if (!card) return;
+      const outfit = hasWardrobe() && g === 'bag';
+      out.push({ card, grid: g, idx: i,
+        r: outfit ? (i < 4 ? -2 : -1) : r0 + (i >> 1),
+        c: outfit ? (i < 4 ? i : i - 4) : c0 + (i & 1),
+        loc: outfit ? `outfit:${S.activeOutfit}:${i}` : `grid:${g}:${i}` });
+    });
   }
   return out;
 }
@@ -250,7 +296,7 @@ function itemHelpers(stat) {
   return placed().filter(p => p.grid === 'bag' && def(p.card).tags.some(t => tags.includes(t))).slice(0, ITEM_BONUS_MAX / ITEM_BONUS);
 }
 function findCard(id) {
-  for (const cells of Object.values(S.grids)) { const k = cells.findIndex(c => c && c.id === id); if (k >= 0) return { cells, k }; }
+  for (const cells of inventoryCells()) { const k = cells.findIndex(c => c && c.id === id); if (k >= 0) return { cells, k }; }
   const b = S.bench.findIndex(c => c.id === id);
   return b >= 0 ? { cells: S.bench, k: b, bench: true } : null;
 }
@@ -516,7 +562,7 @@ function computeWeek() {
   const m = g ? match(g) : 0;
   for (const p of placed()) {
     const d = def(p.card);
-    if (!zoneAllows(p.card, p.grid)) { lines.push(`${d.emoji} ${d.name}：唔適合${st.labels[p.grid]}分類。`); continue; }
+    if (!zoneAllows(p.card, p.grid) || (hasWardrobe() && p.grid === 'bag' && !outfitFits(p.card, p.idx))) { lines.push(`${d.emoji} ${d.name}：唔適合${st.labels[p.grid]}分類。`); continue; }
     const requirement = cardRequirement(p.card);
     if (requirement) { lines.push(`${d.emoji} ${d.name}：${requirement}`); continue; }
     if (d.trainsSport) sportsLearned.add(d.trainsSport);
@@ -853,6 +899,7 @@ function getAt(loc) {
   const [kind, a, b] = loc.split(':');
   if (kind === 'bench') return S.bench[+a] || null;
   if (kind === 'grid') return S.grids[a][+b];
+  if (kind === 'outfit') return S.outfits?.[+a]?.[+b] || null;
   if (kind === 'shop') return S.shop[+a] || null;
   return null;
 }
@@ -860,11 +907,13 @@ function setAt(loc, card) {
   const [kind, a, b] = loc.split(':');
   if (kind === 'bench') { if (card) S.bench[+a] = card; else S.bench.splice(+a, 1); }
   if (kind === 'grid') S.grids[a][+b] = card;
+  if (kind === 'outfit') S.outfits[+a][+b] = card;
 }
 function fits(card, loc) {
-  const [kind, g] = loc.split(':');
+  const [kind, g, index] = loc.split(':');
   if (kind === 'bench') return true;
-  if (kind === 'grid') return zoneAllows(card, g) && !cardRequirement(card);
+  if (kind === 'outfit') return Number.isInteger(+g) && +g >= 0 && +g < OUTFIT_COUNT && outfitFits(card, +index) && !cardRequirement(card);
+  if (kind === 'grid') return zoneAllows(card, g) && (!hasWardrobe() || g !== 'bag' || outfitFits(card, +index)) && !cardRequirement(card);
   return false;
 }
 function buy(i) {
@@ -891,7 +940,10 @@ function sell(loc) {
 function move(from, to) {
   if (from === to) return;
   const candidate = getAt(from);
-  if (to.startsWith('grid:') && candidate && cardRequirement(candidate)) return flash(cardRequirement(candidate));
+  if ((to.startsWith('grid:') || to.startsWith('outfit:')) && candidate) {
+    if (cardRequirement(candidate)) return flash(cardRequirement(candidate));
+    if (to.startsWith('outfit:') && !fits(candidate, to)) return flash(`${def(candidate).name} 唔適合${OUTFIT_SLOTS[+to.split(':')[2]]?.name || '呢個位置'}。`);
+  }
   if (from.startsWith('shop')) {
     const loc = buy(+from.split(':')[1]);
     if (!loc || to === 'bench' || to.startsWith('bench')) return;
@@ -930,6 +982,28 @@ function flash(msg) {
 }
 
 // ---------------- rendering ----------------
+function barStyle(value, max = 100, centered = false) {
+  return `transform:scaleX(${clamp(value / max, centered ? -0.5 : 0, centered ? 0.5 : 1)})`;
+}
+function renderWardrobe() {
+  const slotHTML = (slot, index) => {
+    const card = S.outfits[S.activeOutfit][index];
+    const loc = `outfit:${S.activeOutfit}:${index}`;
+    const can = selected && getAt(selected) && fits(getAt(selected), loc);
+    return `<div class="outfit-slot"><span class="outfit-label">${slot.name}</span>
+      <button type="button" class="cell outfit-cell${can ? ' can' : ''}" data-loc="${loc}" aria-label="第 ${S.activeOutfit + 1} 套，${slot.name}：${card ? def(card).name : '空位'}">
+        ${card ? cardHTML(card, loc) : '<span class="ph">放入物品</span>'}
+      </button></div>`;
+  };
+  return `<div class="wardrobe-heading"><h3>三套穿搭</h3><span>只計使用中一套嘅效果</span></div>
+    <div class="outfit-tabs" role="group" aria-label="選擇使用中穿搭">${S.outfits.map((cells, index) => `
+      <button type="button" class="outfit-tab${index === S.activeOutfit ? ' active' : ''}" data-outfit="${index}" aria-pressed="${index === S.activeOutfit}">
+        <b>第 ${index + 1} 套</b><small>${cells.filter(Boolean).length}/7 件${index === S.activeOutfit ? ' · 使用中' : ' · 備用'}</small>
+      </button>`).join('')}</div>
+    <div class="outfit-slots">${OUTFIT_SLOTS.slice(0, 4).map(slotHTML).join('')}</div>
+    <div class="accessory-slots">${OUTFIT_SLOTS.slice(4).map((slot, index) => slotHTML(slot, index + 4)).join('')}</div>
+    <p class="wardrobe-help">先揀一套，再拖入物品；亦可先點物品，再點對應空格。備用穿搭唔計加成，亦唔會消耗耐久。</p>`;
+}
 const fill = (txt, name, venue) => (txt || '').replaceAll('{g}', name || '佢').replaceAll('{v}', venue ? VENUES[venue].name : '嗰度');
 // short zone names for the tags on each card (colors match the board quadrants)
 const ZONE_SHORT = { bag: () => stageDef().labels.bag, weekday: () => stageDef().key === 'university' ? stageDef().labels.weekday : '平日', weekend: () => '週末', relic: () => '珍藏' };
@@ -996,9 +1070,9 @@ function girlCard({ g, i }) {
   if (i === S.partner) btns.push(`<button class="small" data-breakup="${i}">分手</button>`);
   return `<div class="girl ${isLove ? 'target' : ''} ${i === S.partner ? 'partner' : ''}">
     <div class="ghead"><span class="gface">${g.emoji}</span><div><b>${g.name}</b><small>${g.arch.name}・${STAGES[g.metStage].name}識</small></div>${status}</div>
-    <div class="gbar"><label>${romance ? '好感' : '友情'}</label><div class="bar pink"><div style="width:${g.aff}%"></div></div><b>${g.aff}</b></div>
-    <div class="gbar" title="契合：你有幾啱佢心水（佢嘅喜好）"><label>契合</label><div class="bar blue"><div style="width:${m}%"></div></div><b>${m}</b></div>
-    <div class="gbar" title="化學：佢有幾啱你心水（你嘅擇偶喜好）。影響追求好感、表白/求婚成功率、伴侶好感下降速度"><label>化學</label><div class="bar chem"><div class="${ch >= 0 ? 'pos' : 'neg'}" style="left:${ch >= 0 ? 50 : 50 + ch}%;width:${Math.abs(ch)}%"></div></div><b class="${ch > 0 ? 'up' : ch < 0 ? 'down' : ''}">${sign(ch)}</b></div>
+    <div class="gbar"><label>${romance ? '好感' : '友情'}</label><div class="bar pink"><div style="${barStyle(g.aff)}"></div></div><b>${g.aff}</b></div>
+    <div class="gbar" title="契合：你有幾啱佢心水（佢嘅喜好）"><label>契合</label><div class="bar blue"><div style="${barStyle(m)}"></div></div><b>${m}</b></div>
+    <div class="gbar" title="化學：佢有幾啱你心水（你嘅擇偶喜好）。影響追求好感、表白/求婚成功率、伴侶好感下降速度"><label>化學</label><div class="bar chem"><div class="${ch >= 0 ? 'pos' : 'neg'}" style="${barStyle(ch, 100, true)}"></div></div><b class="${ch > 0 ? 'up' : ch < 0 ? 'down' : ''}">${sign(ch)}</b></div>
     <div class="traits">${traitKeys(g).map(k => `<span class="trait ${(S.pref[k] || 0) > 0 ? 'like' : (S.pref[k] || 0) < 0 ? 'dislike' : ''}">${traitLabel(k)}</span>`).join('')}${g.ratings.length ? `<span class="rated">${g.ratings.map(r => '★'.repeat(r)).join(' / ')}</span>` : `<span class="rated muted">好感 ${RATE_AT[0]} 時評分</span>`}</div>
     <div class="prefs">${prefs}</div>
     ${btns.length ? `<div class="gbtns">${btns.join('')}</div>` : ''}</div>`;
@@ -1015,7 +1089,7 @@ function renderVenues() {
     const perks = lv ? `商店出現率 ×${1 + lv}${lv >= 3 ? '・八折' : ''}・判定 +${VENUE_BONUS * lv}%` : '再去多次變熟客';
     return `<div class="venue lv${lv}" title="${V.desc}">
       <div class="vhead"><span>${V.emoji} <b>${V.name}</b></span><span class="vlv">${LOYALTY[lv].name}</span></div>
-      <div class="bar gold"><div style="width:${pct}%"></div></div>
+      <div class="bar gold"><div style="${barStyle(pct)}"></div></div>
       <div class="vinfo">${perks}${items ? `　<span class="vitems">${items}</span>` : ''}</div></div>`;
   }).join('');
 }
@@ -1042,7 +1116,7 @@ function render() {
   $('#stats').innerHTML = Object.entries(STATS).map(([k, s]) => {
     const d = res.fx.stats[k] || 0;
     return `<div class="stat"><span>${s.name}<small>${s.en}</small></span><b>${S.stats[k]}</b><i class="${d > 0 ? 'up' : d < 0 ? 'down' : ''}">${d ? sign(d) : ''}</i>
-      <div class="bar"><div style="width:${Math.min(100, S.stats[k] / st.norm * 100)}%"></div></div></div>`;
+      <div class="bar"><div style="${barStyle(S.stats[k], st.norm)}"></div></div></div>`;
   }).join('');
 
   const bg = S.bg, f = S.flags;
@@ -1065,7 +1139,7 @@ function render() {
   $('#venues').innerHTML = renderVenues();
   const prefs = Object.entries(S.pref).filter(([, w]) => w).sort((x, y) => y[1] - x[1]);
   $('#mypref').innerHTML = prefs.length
-    ? prefs.map(([k, w]) => `<div class="prow"><span>${traitLabel(k)}</span><div class="bar chem"><div class="${w > 0 ? 'pos' : 'neg'}" style="left:${w > 0 ? 50 : 50 + w / PREF_MAX * 50}%;width:${Math.abs(w) / PREF_MAX * 50}%"></div></div><b class="${w > 0 ? 'up' : 'down'}">${sign(w)}</b></div>`).join('')
+    ? prefs.map(([k, w]) => `<div class="prow"><span>${traitLabel(k)}</span><div class="bar chem"><div class="${w > 0 ? 'pos' : 'neg'}" style="${barStyle(w, PREF_MAX * 2, true)}"></div></div><b class="${w > 0 ? 'up' : 'down'}">${sign(w)}</b></div>`).join('')
     : `<div class="muted">未有。同女仔好感去到 ${RATE_AT.join(' / ')} 時要幫佢評分，你嘅口味就會慢慢成形。</div>`;
 
   const pf = partnerFx();
@@ -1074,7 +1148,10 @@ function render() {
        <span class="pfx">每回合：${fxText(pf)}・好感 -${S.married ? 2 : 3}（<15 會分手）</span>`
     : `<span class="plabel">伴侶欄</span><span class="muted">${st.romance ? '空。好感 ≥ 40 就可以喺右邊「表白」。' : '細路仔，未到拍拖年紀。'}</span>`;
 
-  $('#board').innerHTML = ['bag', 'weekend', 'weekday', 'relic'].map(g => `
+  $('#wardrobe').hidden = !hasWardrobe();
+  $('#wardrobe').innerHTML = hasWardrobe() ? renderWardrobe() : '';
+  $('#board').classList.toggle('with-wardrobe', hasWardrobe());
+  $('#board').innerHTML = ['bag', 'weekend', 'weekday', 'relic'].filter(g => !hasWardrobe() || g !== 'bag').map(g => `
     <div class="quad q-${g}"><div class="qlabel">${st.labels[g]}</div><div class="cells">
       ${S.grids[g].map((card, i) => {
         const loc = `grid:${g}:${i}`;
@@ -1252,6 +1329,7 @@ function tooltipFor(card) {
   return `<div class="tt-head"><span>${d.emoji}</span><b>${d.name}</b><small class="r-${d.rarity}">${RARITY[d.rarity].name}</small></div>
     ${card.edition ? `<div class="tt-ed">${EDITIONS[card.edition].icon} ${EDITIONS[card.edition].name}：${EDITIONS[card.edition].desc}</div>` : ''}
     <div class="tt-row">📍 放：${d.slot.filter(g => zoneAllows(card, g)).map(g => stageDef().labels[g]).join(' / ') || '本階段只可放後備區'}　${cost}</div>
+    ${hasWardrobe() && outfitType(card) ? `<div class="tt-row">穿搭位置：${outfitType(card) === 'accessory' ? '配飾（任一格）' : OUTFIT_SLOTS.find(slot => slot.key === outfitType(card)).name}。只有使用中一套生效。</div>` : ''}
     ${d.requiresSport ? `<div class="tt-row">🏅 入隊條件：先識${SPORT_NAMES[d.requiresSport]}（${S.sports?.[d.requiresSport] ? '已達成' : '未達成'}）。</div>` : ''}
     ${d.requiresTeam ? `<div class="tt-row">🇭🇰 遊戲入選條件：${SPORT_NAMES[d.requiresTeam]}校隊訓練 ${NATIONAL_TEAM_TURNS} 回合（已完成 ${S.teamTraining?.[d.requiresTeam] || 0}）。</div>` : ''}
     ${d.trainsTeam ? `<div class="tt-row">🏅 每完成一回合訓練，累積港隊資格 +1；同一運動每回合最多計一次。</div>` : ''}
@@ -1274,13 +1352,13 @@ function tooltipFor(card) {
 
 // ---------------- events wiring ----------------
 function findCardByUid(u) {
-  for (const p of placed()) if (p.card.uid === u) return p.card;
-  return S.bench.find(c => c.uid === u) || S.shop.find(c => c && c.uid === u);
+  return ownedCards().find(c => c.uid === u) || S.shop.find(c => c && c.uid === u);
 }
 
 function wire() {
   document.addEventListener('click', e => {
     const t = e.target;
+    const outfit = t.closest('[data-outfit]'); if (outfit) return switchOutfit(+outfit.dataset.outfit);
     if (t.closest('#m-next')) return proceed('event');
     if (t.closest('#m-nextev')) return proceed('nextev');
     if (t.closest('#m-turn')) return proceed('turn');
@@ -1315,7 +1393,7 @@ function wire() {
     hideTip();
     // light up valid drop cells without re-rendering (re-rendering would cancel the drag)
     const card = getAt(selected);
-    if (card) document.querySelectorAll('#board .cell').forEach(el => el.classList.toggle('can', fits(card, el.dataset.loc)));
+    if (card) document.querySelectorAll('#board .cell, #wardrobe .cell').forEach(el => el.classList.toggle('can', fits(card, el.dataset.loc)));
   });
   document.addEventListener('dragover', e => { if (e.target.closest?.('[data-loc], #sell')) e.preventDefault(); });
   document.addEventListener('drop', e => {
