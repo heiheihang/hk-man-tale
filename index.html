@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>港男物語 — HK Man Tale (prototype)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="brand"><h1>港男物語</h1><span>7 段人生 · 3 歲到 40 歲</span></div>
+  <div id="week"></div>
+  <div id="res"></div>
+</header>
+<div id="timeline"></div>
+<div id="relics"></div>
+
+<main>
+  <aside class="left">
+    <section class="panel">
+      <h3>人物數值 <small>Skill</small></h3>
+      <div id="stats"></div>
+    </section>
+    <section class="panel">
+      <h3>人物背景 <small>Background</small></h3>
+      <div id="bg"></div>
+    </section>
+    <section class="panel">
+      <h3>擇偶喜好 <small>Dating Preference</small></h3>
+      <div id="mypref"></div>
+    </section>
+    <section class="panel">
+      <h3>場地 <small>熟悉度 · Venues</small></h3>
+      <div id="venues"></div>
+    </section>
+    <section class="panel log">
+      <h3>日誌</h3>
+      <div id="log"></div>
+    </section>
+  </aside>
+
+  <section class="center">
+    <div class="panel">
+      <h3>計劃 <small>Planning — 拖卡入格，相鄰組合 ×2（可以跨格）</small></h3>
+      <div id="partner"></div>
+      <div id="board"></div>
+      <div id="combos"></div>
+      <div id="projection"></div>
+      <button id="go" class="big"></button>
+    </div>
+    <div class="panel">
+      <h3>後備區 <small>Bench</small></h3>
+      <div id="bench"></div>
+      <div id="sell">拖嚟呢度賣嘢</div>
+    </div>
+  </section>
+
+  <aside class="right">
+    <section class="panel">
+      <h3>商店 <span id="wallet" class="wallet"></span> <span id="darkrate" class="darkrate"></span> <button id="reroll" class="small"></button></h3>
+      <div id="shop"></div>
+    </section>
+    <section class="panel">
+      <h3><span id="girlsTitle">女仔</span> <small>好感 · 契合 · 喜好</small></h3>
+      <div id="girls"></div>
+    </section>
+  </aside>
+</main>
+
+<div id="modal"></div>
+<div id="tip"></div>
+<div id="flash"></div>
+
+<script src="data.js"></script>
+<script src="card-editions.js"></script>
+<script src="school-data.js"></script>
+<script src="schools.js"></script>
+<script src="events.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
