@@ -146,6 +146,19 @@ const CARDS = {
   scouts:    { st: [0, 2], name: '童軍',     emoji: '⛺', slot: ['weekend'], rarity: 'common', price: 25, time: 2, tags: ['social', 'sport'], fx: { stats: { social: 1, fit: 1 }, sc: 1 }, desc: '由小童軍開始，日日行一善。' },
 
   // ================= 中學 =================
+  mongkok:   { st: [2, 2], name: '落旺角玩', emoji: '🏙️', slot: ['weekend'], rarity: 'common', price: 15, time: 1, energy: 1, tags: ['social', 'style'], fx: { stats: { social: 1, look: 1 }, ec: 1, money: -15 }, desc: '同朋友行商場、睇波鞋，再約埋去唱K。' },
+  newaykaraoke: { st: [2, 2], name: 'Neway唱K', emoji: '🎤', slot: ['weekend'], rarity: 'common', price: 20, time: 2, energy: 1, tags: ['art', 'social'], fx: { stats: { art: 1, social: 1 }, ec: 2, money: -25 }, desc: '同朋友輪住揀歌，合唱嗰首永遠唱得最大聲。' },
+  kwuntongpromenade: { st: [2, 2], name: '去觀塘海濱', emoji: '🌊', slot: ['weekend'], rarity: 'common', price: 5, time: 1, energy: 1, tags: ['social'], fx: { stats: { social: 1 }, ec: 2 }, desc: '買杯嘢飲，沿住海邊散步，吹風傾到日落。' },
+  weekendfootball: { st: [2, 2], name: '足球校隊（週末）', emoji: '⚽', slot: ['weekend'], rarity: 'rare', price: 50, time: 2, energy: 3, requiresSport: 'football', tags: ['sport', 'social'], fx: { stats: { fit: 2, social: 1 } }, desc: '要先識足球。週末同隊友練默契、踢友誼賽。' },
+  weekendbasketball: { st: [2, 2], name: '籃球校隊（週末）', emoji: '🏀', slot: ['weekend'], rarity: 'rare', price: 50, time: 2, energy: 3, requiresSport: 'basketball', tags: ['sport', 'social'], fx: { stats: { fit: 2, social: 1 } }, desc: '要先識籃球。週末返校練戰術，準備學界賽。' },
+  weekendtabletennis: { st: [2, 2], name: '乒乓球校隊（週末）', emoji: '🏓', slot: ['weekend'], rarity: 'rare', price: 45, time: 2, energy: 2, requiresSport: 'tabletennis', tags: ['sport', 'social'], fx: { stats: { fit: 1, wits: 1, social: 1 } }, desc: '要先識乒乓球。週末約隊友練雙打同接發球。' },
+  weekendathletics: { st: [2, 2], name: '田徑校隊（週末）', emoji: '🏃', slot: ['weekend'], rarity: 'rare', price: 45, time: 2, energy: 3, tags: ['sport', 'social'], fx: { stats: { fit: 2 }, ec: 1 }, desc: '週末返運動場練短跑、跳遠同接力。' },
+  hkfootball: { st: [2, 2], name: '足球港隊', emoji: '🇭🇰', slot: ['weekend'], rarity: 'epic', price: 90, time: 3, energy: 4, requiresTeam: 'football', tags: ['sport', 'social'], fx: { stats: { fit: 3, social: 1 }, sc: 1 }, desc: '遊戲入選條件：完成兩回合足球校隊訓練。加入青年港隊，接受更高強度集訓。' },
+  hkbasketball: { st: [2, 2], name: '籃球港隊', emoji: '🇭🇰', slot: ['weekend'], rarity: 'epic', price: 90, time: 3, energy: 4, requiresTeam: 'basketball', tags: ['sport', 'social'], fx: { stats: { fit: 3, social: 1 }, sc: 1 }, desc: '遊戲入選條件：完成兩回合籃球校隊訓練。參加青年港隊集訓，學更進階嘅戰術。' },
+  hktabletennis: { st: [2, 2], name: '乒乓球港隊', emoji: '🇭🇰', slot: ['weekend'], rarity: 'epic', price: 85, time: 3, energy: 3, requiresTeam: 'tabletennis', tags: ['sport', 'social'], fx: { stats: { fit: 2, wits: 2 }, sc: 1 }, desc: '遊戲入選條件：完成兩回合乒乓球校隊訓練。參加青年港隊集訓，磨練反應同技術。' },
+  hkathletics: { st: [2, 2], name: '田徑港隊', emoji: '🇭🇰', slot: ['weekend'], rarity: 'epic', price: 85, time: 3, energy: 4, requiresTeam: 'athletics', tags: ['sport', 'social'], fx: { stats: { fit: 4 }, sc: 1 }, desc: '遊戲入選條件：完成兩回合田徑校隊訓練。加入青年港隊，為代表香港出賽做準備。' },
+  playpokemon: { st: [2, 2], name: '玩Pokémon卡', emoji: '🃏', slot: ['weekend'], rarity: 'common', price: 15, time: 1, energy: 1, requiresCard: 'pokemoncard', tags: ['otaku', 'social'], fx: { stats: { wits: 1, social: 1 }, ec: 1 }, desc: '要持有珍藏品「pokemon card」。約朋友砌牌、對戰，分享最鍾意嘅精靈。' },
+  playbattlespirits: { st: [2, 2], name: '玩Battle Spirit卡', emoji: '🃏', slot: ['weekend'], rarity: 'common', price: 15, time: 1, energy: 1, requiresCard: 'battlespirits', tags: ['otaku', 'social'], fx: { stats: { wits: 1, talk: 1 }, ec: 1 }, desc: '要持有珍藏品「Battle Spirit卡」。同朋友研究牌組，試吓新戰術。' },
   secondaryfootball: { st: [2, 2], name: '足球校隊訓練', emoji: '⚽', slot: ['weekday'], rarity: 'rare', price: 60, time: 3, energy: 3, requiresSport: 'football', tags: ['sport', 'social'], fx: { stats: { fit: 3, social: 1 } }, desc: '要先識足球。放學練走位、傳接同體能，備戰學界賽。' },
   secondarybasketball: { st: [2, 2], name: '籃球校隊訓練', emoji: '🏀', slot: ['weekday'], rarity: 'rare', price: 60, time: 3, energy: 3, requiresSport: 'basketball', tags: ['sport', 'social'], fx: { stats: { fit: 3, social: 1 } }, desc: '要先識籃球。放學練戰術、罰球同防守，隊友一齊捱。' },
   secondarytabletennis: { st: [2, 2], name: '乒乓球校隊訓練', emoji: '🏓', slot: ['weekday'], rarity: 'rare', price: 50, time: 2, energy: 2, requiresSport: 'tabletennis', tags: ['sport', 'social'], fx: { stats: { fit: 2, wits: 1, social: 1 } }, desc: '要先識乒乓球。練接旋轉球同雙打配合，放學球枱見。' },
@@ -186,11 +199,11 @@ const CARDS = {
 
   pursue:   { st: [2, 6], name: '溝女',      emoji: '💘', slot: ['weekday', 'weekend'], rarity: 'common', price: 30, time: 1, tags: ['romance'], fx: { ec: -1 }, special: 'pursue', desc: '向目標埋身（拍拖中就係陪伴侶）。好感 +(2 + 契合度/15)，並得知一項喜好。' },
   gaming:   { st: [0, 6], name: '打機',      emoji: '🕹️', slot: ['weekday', 'weekend'], rarity: 'common', price: 20, time: 1, tags: ['otaku'], fx: { ec: 2 }, desc: '充電中。' },
-  study:    { st: [1, 2], name: '溫書',      emoji: '✍️', slot: ['weekday'], rarity: 'common', price: 20, time: 2, tags: ['study'], fx: { stats: { brain: 1 } }, desc: '老老實實。' },
+  study:    { st: [1, 2], name: '溫書',      emoji: '✍️', slot: ['weekday', 'weekend'], rarity: 'common', price: 20, time: 2, tags: ['study'], fx: { stats: { brain: 1 } }, desc: '老老實實。' },
   run:      { st: [1, 6], name: '跑步',      emoji: '👟', slot: ['weekend'], rarity: 'common', price: 20, time: 1, tags: ['sport'], fx: { stats: { fit: 1 }, ec: 1 }, desc: '海傍跑一圈。' },
   parents:  { st: [0, 6], name: '陪老豆老母', emoji: '👨‍👩‍👦', slot: ['weekend'], rarity: 'common', price: 10, time: 2, tags: ['family'], fx: { ec: 2, money: 10 }, desc: '飲茶，順便攞多少少零用錢。' },
   friends:  { st: [2, 6], name: '約friend玩', emoji: '🍻', slot: ['weekend'], rarity: 'common', price: 20, time: 2, tags: ['social'], fx: { stats: { social: 1 }, sc: 1, money: -30 }, desc: '兄弟永遠係兄弟。' },
-  tutor:    { st: [1, 2], name: '補習班',    emoji: '📝', slot: ['weekday'], rarity: 'rare', price: 80, time: 2, tags: ['study'], fx: { stats: { brain: 2 }, money: -40, ec: -1 }, desc: '天王補底。' },
+  tutor:    { st: [1, 2], name: '補習班',    emoji: '📝', slot: ['weekday', 'weekend'], rarity: 'rare', price: 80, time: 2, tags: ['study'], fx: { stats: { brain: 2 }, money: -40, ec: -1 }, desc: '天王補底。' },
   team:     { st: [1, 2], name: '運動校隊',   emoji: '🏃', slot: ['weekday'], rarity: 'rare', price: 60, time: 3, tags: ['sport'], fx: { stats: { fit: 2, social: 1 } }, desc: '操到跪。' },
   music:    { st: [2, 3], name: '樂器班',    emoji: '🎻', slot: ['weekday'], rarity: 'rare', price: 100, time: 2, tags: ['art'], fx: { stats: { art: 2 }, money: -50 }, desc: '八級先算有嘢講。' },
   debate:   { st: [2, 2], name: '辯論學會',   emoji: '🎤', slot: ['weekday'], rarity: 'common', price: 40, time: 2, tags: ['talk'], fx: { stats: { talk: 2, wits: 1 } }, desc: '主席、各位評判、各位同學。' },
@@ -318,12 +331,22 @@ const ARCHETYPES = [
 const TAG_NAMES = { study: '讀書', brand: '名牌', style: '打扮', tech: '科技', sport: '運動', otaku: '毒L嘢', art: '藝術', romance: '浪漫', book: '書', family: '家庭', social: '社交', talk: '口才', work: '工作' };
 
 // A completed turn using equipment or attending practice teaches the named sport permanently.
-const SPORT_NAMES = { football: '足球', basketball: '籃球', tabletennis: '乒乓球' };
+const SPORT_NAMES = { football: '足球', basketball: '籃球', tabletennis: '乒乓球', athletics: '田徑' };
+const NATIONAL_TEAM_TURNS = 2;
 const SPORT_PRACTICE = {
   football: 'football', paddle: 'tabletennis', basketball: 'basketball',
   basketballclass: 'basketball', streetcourt: 'basketball',
 };
 for (const [id, sport] of Object.entries(SPORT_PRACTICE)) CARDS[id].trainsSport = sport;
+const TEAM_PRACTICE = {
+  football: ['footballteam', 'secondaryfootball', 'weekendfootball'],
+  basketball: ['basketballteam', 'secondarybasketball', 'weekendbasketball'],
+  tabletennis: ['tabletennisteam', 'secondarytabletennis', 'weekendtabletennis'],
+  athletics: ['athleticsteam', 'secondaryathletics', 'weekendathletics'],
+};
+for (const [sport, ids] of Object.entries(TEAM_PRACTICE)) {
+  for (const id of ids) CARDS[id].trainsTeam = sport;
+}
 
 // ---------- ⚡ 精力 cost per turn (activities) ----------
 const ENERGY = {
